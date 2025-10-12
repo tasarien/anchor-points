@@ -1,0 +1,14 @@
+{
+  "testing_screen_title" : "Testing Screen",
+  "settings_screen_title": "Settings",
+  "settings_account_tab_title": "Account",
+  "settings_account_tab_description": "Manage your account settings",
+  "settings_display_tab_title": "Display",
+  "settings_display_tab_description": "Adjust display preferences",
+  "settings_account_actions_tab_title": "Account Actions",
+  "settings_logout_button": "Sign Out",
+  "settings_display_tab_language_title": "Language",
+  "settings_display_tab_color_title": "Theme",
+  "dark_mode": "Dark Mode",
+  "light_mode": "Light Mode"
+}

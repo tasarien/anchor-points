@@ -1,0 +1,15 @@
+{
+  "testing_screen_title" : "Strona Testowa",
+  "settings_screen_title": "Ustawienia",
+  "settings_account_tab_title": "Konto",
+  "settings_account_tab_description": "Zarządzaj ustawieniami konta",
+  "settings_display_tab_title": "Wyświetlanie",
+  "settings_display_tab_description": "Dostosuj preferencje wyświetlania",
+  "settings_account_actions_tab_title": "Akcje konta",
+  "settings_logout_button": "Wyloguj się",
+  "settings_display_tab_language_title": "Język",
+  "settings_display_tab_color_title": "Motyw",
+  "dark_mode": "Tryb Ciemny",
+  "light_mode": "Tryb Jasny"
+  
+}

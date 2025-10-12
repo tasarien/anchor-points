@@ -1,0 +1,72 @@
+name: anchor_point_app
+description: "An Anchor Point app."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/anchor_point_logo.png"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  font_awesome_flutter: ^10.10.0
+  flutter_popup: ^3.3.9
+  shared_preferences: ^2.5.3
+  supabase: ^2.9.2
+  supabase_flutter: ^2.10.2
+  flutter_provider: ^2.1.0
+  provider: ^6.1.5+1
+  flutter_localization: ^0.3.3
+  persistent_bottom_nav_bar: ^6.2.1
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
+  flutter_test:
+    sdk: flutter
+  rename: ^3.0.1
+
+
+  flutter_lints: ^5.0.0
+
+
+
+flutter:
+  uses-material-design: true
+
+  assets: 
+    - assets/
+    - lib/core/localizations/l10n/
+
+    
+  fonts:
+    - family: EBGaramond
+      fonts:
+        - asset: assets/fonts/EBGaramond-Regular.ttf
+          weight: 500
+    - family: Itim
+      fonts:
+        - asset: assets/fonts/Itim-Regular.ttf
+          weight: 400
+    - family: MPlus
+      fonts:
+        - asset: assets/fonts/MPLUS.ttf
+          weight: 500
+    - family: Chivo
+      fonts:
+        - asset: assets/fonts/Sora-Regular.ttf
+          weight: 500
+    - family: Roboto
+      fonts:
+      - asset: assets/fonts/Roboto-VariableFont_wdth,wght.ttf
+    - family: Emoji
+      fonts:
+      - asset: assets/fonts/NotoEmoji-Medium.ttf
+    - family: AnchorPoint
+      fonts:
+        - asset: assets/fonts/AnchorPoint.ttf
