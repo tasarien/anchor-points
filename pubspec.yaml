@@ -41,6 +41,7 @@ flutter:
 
   assets: 
     - assets/
+    - assets/images/
     - lib/core/localizations/l10n/
 
     
