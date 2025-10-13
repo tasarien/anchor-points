@@ -10,6 +10,7 @@
   "settings_display_tab_language_title": "Język",
   "settings_display_tab_color_title": "Motyw",
   "dark_mode": "Tryb Ciemny",
-  "light_mode": "Tryb Jasny"
+  "light_mode": "Tryb Jasny",
+  "anchor_point_screen_create_first" : "Utwórz pierwszy kotwiczny punkt"
   
 }

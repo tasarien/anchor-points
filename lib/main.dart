@@ -1,6 +1,7 @@
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/core/localizations/app_localizations_delegate.dart';
 import 'package:anchor_point_app/presentations/providers/auth_provider.dart';
+import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/providers/settings_provider.dart';
 import 'package:anchor_point_app/presentations/screens/auth_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screen.dart';
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider(supabase)),
+        ChangeNotifierProvider(create: (_) => DataProvider()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, _) {

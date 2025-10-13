@@ -10,5 +10,6 @@
   "settings_display_tab_language_title": "Language",
   "settings_display_tab_color_title": "Theme",
   "dark_mode": "Dark Mode",
-  "light_mode": "Light Mode"
+  "light_mode": "Light Mode",
+  "anchor_point_screen_create_first" : "Create first Anchor Point"
 }
