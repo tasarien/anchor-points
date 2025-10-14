@@ -97,6 +97,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final settings = context.watch<SettingsProvider>();
+    final authProvider = context.read<AuthProvider>();
 
     return Scaffold(
       body: WholeScaffoldBody(
@@ -260,6 +261,16 @@ class _AuthScreenState extends State<AuthScreen> {
                     suggested: false,
                     text: 'Forgot Password?',
                   ),
+
+                WholeButton(
+                  text: "google",
+                  icon: FontAwesomeIcons.google,
+                  wide: true,
+                  suggested: false,
+                  onPressed: () async {
+                    await authProvider.googleSignIn();
+                  },
+                ),
               ],
             ),
           ),
