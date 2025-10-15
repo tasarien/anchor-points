@@ -1,3 +1,4 @@
+import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/presentations/providers/auth_provider.dart';
 import 'package:anchor_point_app/presentations/providers/settings_provider.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
@@ -36,6 +37,10 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _handleAuth(BuildContext context) async {
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
     final authProvider = context.read<AuthProvider>();
 
     if (!_formKey.currentState!.validate()) return;
@@ -58,14 +63,14 @@ class _AuthScreenState extends State<AuthScreen> {
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Check your email for confirmation!')),
+            SnackBar(content: Text(getText('auth_check_confirmation_message'))),
           );
         }
       }
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message ?? 'An unknown error occurred');
+      setState(() => _errorMessage = e.message ?? getText('auth_uknown_error'));
     } catch (e) {
-      setState(() => _errorMessage = 'Unexpected error. Please try again.');
+      setState(() => _errorMessage = getText('auth_uknown_error'));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -74,9 +79,14 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handlePasswordReset(BuildContext context) async {
     final authProvider = context.read<AuthProvider>();
 
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
     if (_emailController.text.isEmpty) {
       setState(
-        () => _errorMessage = 'Please enter your email to reset password',
+        () =>
+            _errorMessage = getText('auth_please_look_into_confirmation_email'),
       );
       return;
     }
@@ -85,7 +95,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await authProvider.resetPassword(_emailController.text.trim());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password reset email sent!')),
+          SnackBar(content: Text(getText('auth_password_reset_sent'))),
         );
       }
     } catch (e) {
@@ -97,6 +107,10 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final settings = context.watch<SettingsProvider>();
+    final authProvider = context.read<AuthProvider>();
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
 
     return Scaffold(
       body: WholeScaffoldBody(
@@ -139,7 +153,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               });
                             },
                             wide: true,
-                            text: 'Sign In',
+                            text: getText('auth_sign_in'),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -153,7 +167,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               });
                             },
                             wide: true,
-                            text: 'Sign Up',
+                            text: getText('auth_sign_up'),
                           ),
                         ),
                       ],
@@ -183,12 +197,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         TextFormField(
                           controller: _emailController,
                           decoration: InputDecoration(
-                            labelText: 'Email',
+                            labelText: getText('auth_email'),
                             prefixIcon: _icon(FontAwesomeIcons.envelope),
                           ),
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) => value == null || value.isEmpty
-                              ? 'Please enter your email'
+                              ? getText('auth_enter_email')
                               : null,
                         ),
                         const SizedBox(height: 16),
@@ -197,15 +211,15 @@ class _AuthScreenState extends State<AuthScreen> {
                         TextFormField(
                           controller: _passwordController,
                           decoration: InputDecoration(
-                            labelText: 'Password',
+                            labelText: getText('auth_password'),
                             prefixIcon: _icon(FontAwesomeIcons.lock),
                           ),
                           obscureText: true,
                           validator: (value) {
                             if (value == null || value.isEmpty)
-                              return 'Please enter your password';
+                              return getText('auth_enter_password');
                             if (!_isSignIn && value.length < 6) {
-                              return 'Password must be at least 6 characters';
+                              return getText('auth_password_six_char');
                             }
                             return null;
                           },
@@ -217,15 +231,15 @@ class _AuthScreenState extends State<AuthScreen> {
                           TextFormField(
                             controller: _confirmPasswordController,
                             decoration: InputDecoration(
-                              labelText: 'Confirm Password',
+                              labelText: getText('auth_confirm_password'),
                               prefixIcon: _icon(FontAwesomeIcons.lock),
                             ),
                             obscureText: true,
                             validator: (value) {
                               if (value == null || value.isEmpty)
-                                return 'Please confirm your password';
+                                return getText('auth_please_confirm_password');
                               if (value != _passwordController.text)
-                                return 'Passwords do not match';
+                                return getText('auth_password_not_match');
                               return null;
                             },
                           ),
@@ -243,7 +257,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                 onPressed: _isLoading
                                     ? null
                                     : () => _handleAuth(context),
-                                text: _isSignIn ? 'Sign In' : 'Sign Up',
+                                text: _isSignIn
+                                    ? getText('auth_sign_in')
+                                    : getText('auth_sign_up'),
                               ),
                       ],
                     ),
@@ -254,12 +270,24 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 // Forgot password
                 if (_isSignIn)
-                  WholeButton(
+                  TextButton(
                     onPressed: () => _handlePasswordReset(context),
-                    wide: true,
-                    suggested: false,
-                    text: 'Forgot Password?',
+
+                    child: Text(getText('auth_forgot_password')),
                   ),
+                Divider(indent: 20, endIndent: 20),
+                SizedBox(height: 20),
+                Text(getText('auth_sign_in_with')),
+                SizedBox(height: 20),
+                WholeButton(
+                  text: "google",
+                  icon: FontAwesomeIcons.google,
+                  wide: true,
+                  suggested: false,
+                  onPressed: () async {
+                    await authProvider.googleSignIn();
+                  },
+                ),
               ],
             ),
           ),
