@@ -62,10 +62,12 @@ class AnchorPointScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Anchor Point')),
-      body: Center(
-        child: appData.getAnchorPoints.isNotEmpty
-            ? appData.getAnchorPoints.first.buildAPWidget()
-            : createFirstAPButton(),
+      body: SingleChildScrollView(
+        child: Center(
+          child: appData.getAnchorPoints.isNotEmpty
+              ? appData.getAnchorPoints.first.buildAPWidget()
+              : createFirstAPButton(),
+        ),
       ),
     );
   }
