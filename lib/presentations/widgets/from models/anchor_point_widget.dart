@@ -1,4 +1,6 @@
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
+import 'package:anchor_point_app/presentations/widgets/global/section_tab.dart';
+import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:flutter/material.dart';
 
 class AnchorPointWidget extends StatefulWidget {
@@ -69,7 +71,20 @@ class _AnchorPointWidgetState extends State<AnchorPointWidget> {
           Container(
             width: 300,
             
-            child: Card(child: Text("text"),),
+            child: Card(child: Column(
+              children: [
+                SectionTab(
+                  text: "Segments",
+                  content: Row(
+                    children: [
+                      WholeButton(),
+                      WholeButton(),
+                      WholeButton()
+                    ],
+                  ),
+                )
+              ],
+            ),),
           )
         ],
       ),
