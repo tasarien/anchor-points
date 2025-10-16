@@ -1,3 +1,4 @@
+import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in_ios/google_sign_in_ios.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +23,11 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
-  Future<void> signIn(String email, String password) async {
+  Future<void> signIn(
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -40,6 +45,7 @@ class AuthProvider extends ChangeNotifier {
     }
 
     isLoading = false;
+
     notifyListeners();
   }
 
@@ -61,6 +67,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> signOut(BuildContext context) async {
+    await Supabase.instance.client.auth.signOut();
+    DataProvider appData = Provider.of<DataProvider>(context, listen: false);
+    appData.clearData();
+    Navigator.of(context).pop();
+  }
+
   Future<void> resetPassword(String email) async {
     isLoading = true;
     errorMessage = null;
@@ -78,7 +91,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<AuthResponse> googleSignIn() async {
+  Future<AuthResponse> googleSignIn(BuildContext context) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -104,6 +117,7 @@ class AuthProvider extends ChangeNotifier {
     if (idToken == null) {
       throw 'No ID Token found.';
     }
+
     isLoading = false;
     notifyListeners();
     return supabase.auth.signInWithIdToken(

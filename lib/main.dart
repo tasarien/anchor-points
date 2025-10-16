@@ -4,7 +4,9 @@ import 'package:anchor_point_app/presentations/providers/auth_provider.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/providers/settings_provider.dart';
 import 'package:anchor_point_app/presentations/screens/auth_screen.dart';
+import 'package:anchor_point_app/presentations/screens/loading_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screen.dart';
+import 'package:anchor_point_app/presentations/screens/set_up_screen.dart';
 import 'package:anchor_point_app/presentations/screens/testing_screen.dart';
 import 'package:anchor_point_app/presentations/theme/app_theme.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
@@ -37,7 +39,21 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider(supabase)),
-        ChangeNotifierProvider(create: (_) => DataProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, DataProvider>(
+          create: (_) => DataProvider(),
+          update: (_, auth, dataProvider) {
+            final user = auth.user;
+
+            if (user == null) {
+              dataProvider?.clearData();
+            } else {
+              dataProvider?.clearData();
+              dataProvider?.loadAllData();
+            }
+
+            return dataProvider!;
+          },
+        ),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, _) {
@@ -61,7 +77,7 @@ class MyApp extends StatelessWidget {
                 final session = snapshot.data?.session;
 
                 if (session != null) {
-                  return MainScreen();
+                  return LoadingScreen();
                 } else {
                   return AuthScreen();
                 }

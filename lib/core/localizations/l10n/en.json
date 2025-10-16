@@ -1,4 +1,5 @@
 {
+  "anchor_point" : "Anchor Point",
   "testing_screen_title" : "Testing Screen",
   "settings_screen_title": "Settings",
   "settings_account_tab_title": "Account",
@@ -27,5 +28,24 @@
   "auth_please_confirm_password": "Please confirm your password.",
   "auth_password_not_match": "Passwords do not match.",
   "auth_forgot_password": "Forgot Password?",
-  "auth_sign_in_with": "Sign in with"
+  "auth_sign_in_with": "Sign in with",
+  "title_field_description" : "Think about give a title of new Anchor Point. It can be simple. You can change it later.",
+  "description_field_description" : "There You can elaborate more, about what your Anchor Point actually is. You can definetely think about it later.",
+  "other_ap_screen_title" : "All your Anchor Points",
+  "other_ap_screen_add_anchor_point" : "Create new Anchor Point",
+  "other_ap_screen_limit_reached" : "You have reached a limit of available Anchor Point slots.",
+  "create_anchor_point_screen_suggestions_section" : "Suggestions",
+  "create_anchor_point_screen_title" : "Create new Anchor Point",
+  "create_anchor_point_screen_description_optional" : "Description is optional",
+  "create_anchor_point_screen_create_button" : "Create",
+  "create_anchor_point_screen_message_empty_name" : "Please give a name to this new Anchor Point. It can be simply 'New Anchor Point'. You can change it later.",
+  "anchor_point_created" : "Anchor Point have been created",
+  "anchor_point_screen_delete_dialog" : "Are You sure about deleting this Anchor Point?",
+  "delete" : "Delete",
+  "cancel" : "Cancel",
+  "sure_delete" : "I'm sure. Delete it.",
+  "anchor_point_deleted" : "Anchor Point have been deleted.",
+  "no_desc_provided" : "There is no description yet.",
+  "anchor_point_succesfully_updated" : "Anchor Point have been updated."
+
 }

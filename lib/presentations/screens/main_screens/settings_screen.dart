@@ -1,4 +1,5 @@
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/presentations/providers/auth_provider.dart';
 import 'package:anchor_point_app/presentations/providers/settings_provider.dart';
 import 'package:anchor_point_app/presentations/widgets/global/section_tab.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
@@ -63,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Card(
       child: ListTile(
-        leading: Icon(icon, color: colorScheme.surface, size: 24),
+        leading: Icon(icon, color: colorScheme.tertiary, size: 24),
         title: Text(title, style: Theme.of(context).textTheme.titleMedium),
         subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
         trailing: Icon(
@@ -93,16 +94,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class AccountSettingsScreen extends StatelessWidget {
   const AccountSettingsScreen({super.key});
 
-  Future<void> _handleSignOut(BuildContext context) async {
-    await Supabase.instance.client.auth.signOut();
-    Navigator.of(context).pop();
-  }
-
   @override
   Widget build(BuildContext context) {
     String getText(text) {
       return AppLocalizations.of(context).translate(text);
     }
+
+    AuthProvider auth = context.watch<AuthProvider>();
 
     return Scaffold(
       appBar: AppBar(title: Text(getText("settings_account_tab_title"))),
@@ -122,7 +120,7 @@ class AccountSettingsScreen extends StatelessWidget {
                         text: getText("settings_account_actions_tab_title"),
                       ),
                       WholeButton(
-                        onPressed: () => _handleSignOut(context),
+                        onPressed: () => auth.signOut(context),
                         wide: true,
                         text: getText("settings_logout_button"),
                         icon: FontAwesomeIcons.arrowRightFromBracket,

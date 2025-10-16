@@ -1,4 +1,5 @@
 {
+  "anchor_point" : "Punkt Zaczepienia",
   "testing_screen_title" : "Strona Testowa",
   "settings_screen_title": "Ustawienia",
   "settings_account_tab_title": "Konto",
@@ -27,5 +28,7 @@
   "auth_please_confirm_password": "Potwierdź swoje hasło.",
   "auth_password_not_match": "Hasła nie są takie same.",
   "auth_forgot_password": "Nie pamiętasz hasła?",
-  "auth_sign_in_with": "Zaloguj się za pomocą: "
+  "auth_sign_in_with": "Zaloguj się za pomocą: ",
+  "cancel" : "Cancel",
+  "save_changes" : "Save changes"
 }

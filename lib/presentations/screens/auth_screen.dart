@@ -55,6 +55,7 @@ class _AuthScreenState extends State<AuthScreen> {
         await authProvider.signIn(
           _emailController.text.trim(),
           _passwordController.text,
+          context,
         );
       } else {
         await authProvider.signUp(
@@ -285,7 +286,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   wide: true,
                   suggested: false,
                   onPressed: () async {
-                    await authProvider.googleSignIn();
+                    await authProvider.googleSignIn(context);
                   },
                 ),
               ],

@@ -1,4 +1,5 @@
 import 'package:anchor_point_app/presentations/widgets/from%20models/anchor_point_widget.dart';
+import 'package:anchor_point_app/presentations/widgets/from%20models/anchor_point_widget_small.dart';
 
 class AnchorPoint {
   final int id;
@@ -31,7 +32,7 @@ class AnchorPoint {
     };
   }
 
-  AnchorPointWidget buildAPWidget() {
-    return AnchorPointWidget(anchorPoint: this);
+  AnchorPointWidgetSmall buildAPWidgetSmall() {
+    return AnchorPointWidgetSmall(anchorPoint: this);
   }
 }

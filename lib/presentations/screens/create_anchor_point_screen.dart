@@ -1,4 +1,8 @@
+import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/core/localizations/suggestions.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
+import 'package:anchor_point_app/presentations/providers/settings_provider.dart';
+import 'package:anchor_point_app/presentations/widgets/global/section_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -17,10 +21,25 @@ class _CreateAnchorPointScreenState extends State<CreateAnchorPointScreen> {
   bool _isLoading = false;
 
   Future<void> _submit(DataProvider appData) async {
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();
-    if (name.isEmpty) return;
-
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            getText('create_anchor_point_screen_message_empty_name'),
+          ),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+      return;
+    }
     setState(() {
       _isLoading = true;
     });
@@ -36,11 +55,11 @@ class _CreateAnchorPointScreenState extends State<CreateAnchorPointScreen> {
         _isLoading = false;
       });
 
-      appData.reloadAnchorPoints();
+      appData.loadAllData();
       Navigator.of(context).pop();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Anchor point created!')));
+      ).showSnackBar(SnackBar(content: Text(getText('anchor_point_created'))));
       _nameController.clear();
       _descriptionController.clear();
     } catch (e) {
@@ -52,36 +71,101 @@ class _CreateAnchorPointScreenState extends State<CreateAnchorPointScreen> {
 
   @override
   Widget build(BuildContext context) {
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
     DataProvider appData = context.watch<DataProvider>();
+    SettingsProvider settings = context.watch<SettingsProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Anchor Point')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+      appBar: AppBar(title: Text(getText("create_anchor_point_screen_title"))),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Container(
+                height: 100,
+                clipBehavior: Clip.hardEdge,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                width: double.infinity,
+                child: Image.asset(
+                  'assets/images/empty_landscape.png',
+                  fit: BoxFit.fitWidth,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                border: OutlineInputBorder(),
+              SizedBox(height: 20),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    spacing: 10,
+                    children: [
+                      Text(getText('title_field_description')),
+                      TextField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: getText('title'),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      SectionTab(
+                        text: getText(
+                          'create_anchor_point_screen_suggestions_section',
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          // Example array of strings
+                          ...suggestions[settings.locale]!['title_suggestions']!
+                              .map(
+                                (chipText) => GestureDetector(
+                                  onTap: () {
+                                    _nameController.text = chipText;
+                                  },
+                                  child: Chip(label: Text(chipText)),
+                                ),
+                              ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _isLoading ? null : () => _submit(appData),
-              child: _isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Submit'),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    spacing: 10,
+                    children: [
+                      Text(getText('description_field_description')),
+                      TextField(
+                        controller: _descriptionController,
+                        decoration: InputDecoration(
+                          labelText: getText(
+                            'create_anchor_point_screen_description_optional',
+                          ),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _isLoading ? null : () => _submit(appData),
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : Text(getText('create_anchor_point_screen_create_button')),
+              ),
+            ],
+          ),
         ),
       ),
     );
