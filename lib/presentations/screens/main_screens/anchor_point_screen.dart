@@ -29,6 +29,8 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
   bool _saveLoading = false;
   bool _editMode = false;
   bool _isAtBottom = true;
+  bool _progressCardOpened = true;
+  StepProgressController _progressController = StepProgressController(totalSteps: 3);
   ScrollController _scrollController = ScrollController();
 
   TextEditingController _titleController = TextEditingController();
@@ -45,8 +47,10 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     _scrollController.addListener(_scrollListener);
 
     // Check initial state after layout
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _checkIfAtBottom();
+      await Future.delayed(Duration(milliseconds: 500));
+      stepByStatus();
     });
   }
 
@@ -129,17 +133,36 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     });
   }
 
-  int stepByStatus() {
-    switch (widget.anchorPoint.status) {
-      case AnchorPointStatus.created:
-        return 0;
-      case AnchorPointStatus.drafted:
-        return 1;
-      case AnchorPointStatus.crafted:
-        return 2;
-      case AnchorPointStatus.archived:
-        return -1;
+  void stepByStatus() async {
+   
+    int getIterationsFromProgress() {
+      switch (widget.anchorPoint.status) {
+        case AnchorPointStatus.created:
+          return 0;
+        case AnchorPointStatus.drafted:
+          return 1;
+        case AnchorPointStatus.crafted:
+          return 2;
+        case AnchorPointStatus.archived:
+          return -1;
+      }
     }
+
+    int iterations = getIterationsFromProgress();
+
+    setState(() {
+      _progressCardOpened = true;
+    });
+    for(int i = 0; i <= iterations; i++) {
+      await Future.delayed(Durations.medium1);
+      setState(() {
+        _progressController.nextStep();
+      });
+    }
+await Future.delayed(Duration(seconds: 2));
+    setState(() {
+      _progressCardOpened = false;
+    });
   }
 
   @override
@@ -269,8 +292,101 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
                   SingleChildScrollView(
                     controller: _scrollController,
                     child: Column(
-                      spacing: 20,
+                      spacing: 0,
                       children: [
+                         GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _progressCardOpened = !_progressCardOpened;
+                            });
+                          },
+                           child: Card(
+                            
+                             child: Padding(
+                               padding: const EdgeInsets.all(8.0),
+                               child: AnimatedCrossFade(
+                                
+                                duration: Durations.long1,
+                                crossFadeState: _progressCardOpened ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                                  firstChild: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      FaIcon(AnchorPointIcons.anchor_point_step1),
+                                      FaIcon(AnchorPointIcons.anchor_point_step2),
+                                      FaIcon(AnchorPointIcons.anchor_point_step3),
+                                    ],
+                                  ),
+                                 secondChild: Column(
+                                   children: [
+                                     StepProgress(
+                                              totalSteps: 3,
+                                              controller: _progressController,
+                                              
+                                              width: 240,
+                                              stepNodeSize: 40,
+                                              theme: StepProgressThemeData(
+                                               
+                                                // stepNodeStyle: StepNodeStyle(
+                                                //   activeForegroundColor: Colors.transparent,
+                                                //   defaultForegroundColor: Colors.transparent
+                                                // ),
+                                                stepAnimationDuration: Durations.long1,
+                                                defaultForegroundColor: 
+                                                    Theme.of(context).scaffoldBackgroundColor,
+                                                activeForegroundColor:
+                                                    colorScheme.tertiary,
+                                              ),
+                                              
+                                              nodeLabelBuilder: (index, completedStepIndex) {
+                                            
+                                                  String title ()  {
+                                                    switch (index) {
+                                                  case 0:
+                                                   return getText('ap_status_1');
+                                                    
+                                                  case 1:
+                                                    return getText('ap_status_2');
+                                                    
+                                                  case 2:
+                                                   return getText('ap_status_3');
+                                                  default: return "";
+
+                                                 
+                                                }
+                                                  }
+
+                                                  return Text(title(), style: TextStyle(color: index > completedStepIndex ? colorScheme.tertiary : colorScheme.onSurface),);
+                                                
+                                              },
+                                              nodeIconBuilder: (index, completedStepIndex) {
+                                                icon() {
+                                                  switch (index) {
+                                                  case 0:
+                                                   return AnchorPointIcons.anchor_point_step1;
+                                                    
+                                                  case 1:
+                                                    return AnchorPointIcons.anchor_point_step2;
+                                                    
+                                                  case 2:
+                                                   return AnchorPointIcons.anchor_point_step3;
+                                                 
+                                                }
+                                                }
+                                                return SizedBox(
+                                                  height: 80,
+                                                  child: Center(
+                                                    child: WholeButton(icon: icon(), disabled: index > completedStepIndex)
+                                                  
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                   ],
+                                 ),
+                               ),
+                             ),
+                           ),
+                         ),
                         Container(
                           width: 300,
                           decoration: BoxDecoration(
@@ -325,36 +441,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
                             ],
                           ),
                         ),
-                        SizedBox(
-                          width: 300,
-                          height: 300,
-                          child: Card(
-                            child: Column(
-                              children: [
-                                StepProgress(
-                                  totalSteps: 3,
-                                  nodeTitles: [
-                                    getText('ap_status_1'),
-                                    getText('ap_status_2'),
-                                    getText('ap_status_3'),
-                                  ],
-                                  stepNodeSize: 12,
-                                  currentStep: stepByStatus(),
-                                  theme: StepProgressThemeData(
-                                    defaultForegroundColor:
-                                        colorScheme.tertiary,
-                                    activeForegroundColor:
-                                        colorScheme.onSurface,
-                                  ),
-                                  nodeIconBuilder: (index, completedStepIndex) {
-                                    return SizedBox.shrink();
-                                  },
-                                ),
-                                InfoBox(text: []),
-                              ],
-                            ),
-                          ),
-                        ),
+                        
                         if (widget.anchorPoint.status ==
                             AnchorPointStatus.created)
                           draftingSection(),
@@ -411,13 +498,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
                       child: AnimatedOpacity(
                         duration: Duration(milliseconds: 800),
                         opacity: _isAtBottom ? 0 : 1,
-                        child: Row(
-                          children: [
-                            FaIcon(AnchorPointIcons.anchor_point_step1),
-                            FaIcon(AnchorPointIcons.anchor_point_step2),
-                            FaIcon(AnchorPointIcons.anchor_point_step3),
-                          ],
-                        ),
+                        child: FaIcon(FontAwesomeIcons.chevronDown)
                       ),
                     ),
                   ),
