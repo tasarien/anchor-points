@@ -46,6 +46,9 @@
   "sure_delete" : "I'm sure. Delete it.",
   "anchor_point_deleted" : "Anchor Point have been deleted.",
   "no_desc_provided" : "There is no description yet.",
-  "anchor_point_succesfully_updated" : "Anchor Point have been updated."
-
+  "anchor_point_succesfully_updated" : "Anchor Point have been updated.",
+  "ap_status_1" : "Prepare",
+"ap_status_2" : "Crafting",
+"ap_status_3" : "Ready",
+"ap_status_4" : "Archived"
 }

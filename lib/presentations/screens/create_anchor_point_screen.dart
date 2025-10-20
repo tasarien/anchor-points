@@ -49,6 +49,7 @@ class _CreateAnchorPointScreenState extends State<CreateAnchorPointScreen> {
       final response = await supabase.from('anchorPoints').insert({
         'name': name,
         'description': description.isEmpty ? null : description,
+        'status': 'created',
       });
 
       setState(() {

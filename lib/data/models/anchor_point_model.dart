@@ -6,12 +6,14 @@ class AnchorPoint {
   final String ownerId;
   final String? name;
   final String? description;
+  final AnchorPointStatus status;
 
   AnchorPoint({
     required this.id,
     required this.ownerId,
     this.name,
     this.description,
+    required this.status,
   });
 
   factory AnchorPoint.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,10 @@ class AnchorPoint {
       ownerId: json['owner_id'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
+      status: AnchorPointStatus.values.firstWhere(
+        (e) => e.name == (json['status'] as String),
+        orElse: () => AnchorPointStatus.created,
+      ),
     );
   }
 
@@ -29,6 +35,7 @@ class AnchorPoint {
       'owner_id': ownerId,
       'name': name,
       'description': description,
+      'status': status.name,
     };
   }
 
@@ -36,3 +43,5 @@ class AnchorPoint {
     return AnchorPointWidgetSmall(anchorPoint: this);
   }
 }
+
+enum AnchorPointStatus { created, drafted, crafted, archived }
