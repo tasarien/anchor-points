@@ -5,6 +5,7 @@ import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/screens/create_anchor_point_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/other_AP_screens.dart';
+import 'package:anchor_point_app/presentations/widgets/drawers/image_picker.dart';
 import 'package:anchor_point_app/presentations/widgets/global/info_box.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator%20copy.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
@@ -14,6 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:step_progress/step_progress.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AnchorPointScreen extends StatefulWidget {
   final AnchorPoint anchorPoint;
@@ -30,11 +32,19 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
   bool _editMode = false;
   bool _isAtBottom = true;
   bool _progressCardOpened = true;
-  StepProgressController _progressController = StepProgressController(totalSteps: 3);
+  StepProgressController _progressController = StepProgressController(
+    totalSteps: 3,
+  );
   ScrollController _scrollController = ScrollController();
+
+  bool _step1present = false;
+  bool _step2present = false;
+  bool _step3present = false;
+  bool _statusArchived = false;
 
   TextEditingController _titleController = TextEditingController();
   TextEditingController _descriptionController = TextEditingController();
+  String? _imageUrl;
 
   String getText(String text) {
     return AppLocalizations.of(context).translate(text);
@@ -83,6 +93,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
   fillInputFields() {
     _titleController.text = widget.anchorPoint.name!;
     _descriptionController.text = widget.anchorPoint.description ?? "";
+    _imageUrl = widget.anchorPoint.imageUrl;
   }
 
   void turnOnEditMode() {
@@ -106,6 +117,10 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
       updatedAnchorPoint['description'] = _descriptionController.text;
     }
 
+    if (widget.anchorPoint.imageUrl != _imageUrl) {
+      updatedAnchorPoint['image_url'] = _imageUrl;
+    }
+
     await SupabaseAnchorPointSource().updateAnchorPoint(
       widget.anchorPoint.id,
       updatedAnchorPoint,
@@ -126,40 +141,52 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     );
   }
 
+  void handleDeletingUnusedImage() {
+    //TODO handle deleting old images
+  }
+
   void revertChanges() {
+    handleDeletingUnusedImage();
     fillInputFields();
+
     setState(() {
       _editMode = false;
     });
   }
 
   void stepByStatus() async {
-   
-    int getIterationsFromProgress() {
-      switch (widget.anchorPoint.status) {
-        case AnchorPointStatus.created:
-          return 0;
-        case AnchorPointStatus.drafted:
-          return 1;
-        case AnchorPointStatus.crafted:
-          return 2;
-        case AnchorPointStatus.archived:
-          return -1;
-      }
-    }
+    int iterations = 0;
+    switch (widget.anchorPoint.status) {
+      case AnchorPointStatus.created:
+        iterations = 0;
+        _step1present = true;
+        break;
+      case AnchorPointStatus.drafted:
+        iterations = 1;
+        _step1present = true;
+        _step2present = true;
+        break;
+      case AnchorPointStatus.crafted:
+        iterations = 2;
+        _step1present = true;
+        _step2present = true;
+        _step3present = true;
 
-    int iterations = getIterationsFromProgress();
+      case AnchorPointStatus.archived:
+        iterations = -1;
+        _statusArchived = true;
+    }
 
     setState(() {
       _progressCardOpened = true;
     });
-    for(int i = 0; i <= iterations; i++) {
+    for (int i = 0; i <= iterations; i++) {
       await Future.delayed(Durations.medium1);
       setState(() {
         _progressController.nextStep();
       });
     }
-await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(Duration(seconds: 2));
     setState(() {
       _progressCardOpened = false;
     });
@@ -170,19 +197,19 @@ await Future.delayed(Duration(seconds: 2));
     final appData = context.watch<DataProvider>();
 
     Widget draftingSection() {
-      return Card(child: Text("Time to draft"));
+      return Card(child: Container(width: 400, child: Text("Time to draft")));
     }
 
     Widget craftingSection() {
-      return Card();
+      return Card(child: Container(width: 350, child: Text("Time to craft")));
     }
 
     Widget readySection() {
-      return Card();
+      return Card(child: Container(width: 300, child: Text("Ready")));
     }
 
     Widget archivedSection() {
-      return Card();
+      return Card(child: Text("Archived"));
     }
 
     ColorScheme colorScheme = Theme.of(context).colorScheme;
@@ -294,99 +321,144 @@ await Future.delayed(Duration(seconds: 2));
                     child: Column(
                       spacing: 0,
                       children: [
-                         GestureDetector(
+                        GestureDetector(
                           onTap: () {
                             setState(() {
                               _progressCardOpened = !_progressCardOpened;
                             });
                           },
-                           child: Card(
-                            
-                             child: Padding(
-                               padding: const EdgeInsets.all(8.0),
-                               child: AnimatedCrossFade(
-                                
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: AnimatedCrossFade(
                                 duration: Durations.long1,
-                                crossFadeState: _progressCardOpened ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                                  firstChild: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      FaIcon(AnchorPointIcons.anchor_point_step1),
-                                      FaIcon(AnchorPointIcons.anchor_point_step2),
-                                      FaIcon(AnchorPointIcons.anchor_point_step3),
-                                    ],
-                                  ),
-                                 secondChild: Column(
-                                   children: [
-                                     StepProgress(
-                                              totalSteps: 3,
-                                              controller: _progressController,
-                                              
-                                              width: 240,
-                                              stepNodeSize: 40,
-                                              theme: StepProgressThemeData(
-                                               
-                                                // stepNodeStyle: StepNodeStyle(
-                                                //   activeForegroundColor: Colors.transparent,
-                                                //   defaultForegroundColor: Colors.transparent
-                                                // ),
-                                                stepAnimationDuration: Durations.long1,
-                                                defaultForegroundColor: 
-                                                    Theme.of(context).scaffoldBackgroundColor,
-                                                activeForegroundColor:
-                                                    colorScheme.tertiary,
-                                              ),
-                                              
-                                              nodeLabelBuilder: (index, completedStepIndex) {
-                                            
-                                                  String title ()  {
-                                                    switch (index) {
-                                                  case 0:
-                                                   return getText('ap_status_1');
-                                                    
-                                                  case 1:
-                                                    return getText('ap_status_2');
-                                                    
-                                                  case 2:
-                                                   return getText('ap_status_3');
-                                                  default: return "";
+                                crossFadeState: _progressCardOpened
+                                    ? CrossFadeState.showSecond
+                                    : CrossFadeState.showFirst,
+                                firstChild: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    _step1present
+                                        ? FaIcon(
+                                            AnchorPointIcons.anchor_point_step1,
+                                          )
+                                        : SizedBox.shrink(),
+                                    _step2present
+                                        ? FaIcon(
+                                            AnchorPointIcons.anchor_point_step2,
+                                          )
+                                        : SizedBox.shrink(),
+                                    _step3present
+                                        ? FaIcon(
+                                            AnchorPointIcons.anchor_point_step3,
+                                          )
+                                        : SizedBox.shrink(),
+                                    _statusArchived
+                                        ? FaIcon(FontAwesomeIcons.boxArchive)
+                                        : SizedBox.shrink(),
+                                  ],
+                                ),
+                                secondChild: Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      children: [
+                                        StepProgress(
+                                          totalSteps: 3,
+                                          controller: _progressController,
 
-                                                 
-                                                }
-                                                  }
+                                          width: 240,
+                                          stepNodeSize: 55,
+                                          theme: StepProgressThemeData(
+                                            stepNodeStyle: StepNodeStyle(
+                                              activeForegroundColor:
+                                                  Colors.transparent,
+                                              defaultForegroundColor:
+                                                  Colors.transparent,
+                                            ),
+                                            stepAnimationDuration:
+                                                Durations.long1,
+                                            defaultForegroundColor: Theme.of(
+                                              context,
+                                            ).scaffoldBackgroundColor,
+                                            activeForegroundColor:
+                                                colorScheme.tertiary,
+                                          ),
 
-                                                  return Text(title(), style: TextStyle(color: index > completedStepIndex ? colorScheme.tertiary : colorScheme.onSurface),);
-                                                
-                                              },
-                                              nodeIconBuilder: (index, completedStepIndex) {
-                                                icon() {
+                                          nodeLabelBuilder:
+                                              (index, completedStepIndex) {
+                                                String title() {
                                                   switch (index) {
-                                                  case 0:
-                                                   return AnchorPointIcons.anchor_point_step1;
-                                                    
-                                                  case 1:
-                                                    return AnchorPointIcons.anchor_point_step2;
-                                                    
-                                                  case 2:
-                                                   return AnchorPointIcons.anchor_point_step3;
-                                                 
+                                                    case 0:
+                                                      return getText(
+                                                        'ap_status_1',
+                                                      );
+
+                                                    case 1:
+                                                      return getText(
+                                                        'ap_status_2',
+                                                      );
+
+                                                    case 2:
+                                                      return getText(
+                                                        'ap_status_3',
+                                                      );
+                                                    default:
+                                                      return "";
+                                                  }
                                                 }
-                                                }
-                                                return SizedBox(
-                                                  height: 80,
-                                                  child: Center(
-                                                    child: WholeButton(icon: icon(), disabled: index > completedStepIndex)
-                                                  
+
+                                                return Text(
+                                                  title(),
+                                                  style: TextStyle(
+                                                    color:
+                                                        index >
+                                                            completedStepIndex
+                                                        ? colorScheme.tertiary
+                                                        : colorScheme.onSurface,
                                                   ),
                                                 );
                                               },
-                                            ),
-                                   ],
-                                 ),
-                               ),
-                             ),
-                           ),
-                         ),
+                                          nodeIconBuilder:
+                                              (index, completedStepIndex) {
+                                                icon() {
+                                                  switch (index) {
+                                                    case 0:
+                                                      return AnchorPointIcons
+                                                          .anchor_point_step1;
+
+                                                    case 1:
+                                                      return AnchorPointIcons
+                                                          .anchor_point_step2;
+
+                                                    case 2:
+                                                      return AnchorPointIcons
+                                                          .anchor_point_step3;
+                                                  }
+                                                }
+
+                                                return SizedBox(
+                                                  height: 80,
+                                                  child: Center(
+                                                    child: WholeButton(
+                                                      icon: icon(),
+                                                      onPressed: () {},
+                                                      disabled:
+                                                          index >
+                                                          completedStepIndex,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                         Container(
                           width: 300,
                           decoration: BoxDecoration(
@@ -401,14 +473,40 @@ await Future.delayed(Duration(seconds: 2));
                                   child: Container(width: 270, height: 270),
                                 ),
                               ),
+
                               ClipOval(
-                                child: Image.asset(
-                                  'assets/images/auth_gate.png', // <-- Replace with your image asset
-                                  width: 280,
-                                  height: 280,
-                                  fit: BoxFit.cover,
-                                ),
+                                child: _imageUrl != null
+                                    ? Image.network(
+                                        _imageUrl!,
+                                        width: 280,
+                                        height: 280,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.asset(
+                                        'assets/images/empty_landscape.png',
+                                        width: 280,
+                                        height: 280,
+                                        fit: BoxFit.cover,
+                                      ),
                               ),
+                              if (_editMode)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: WholeButton(
+                                    onPressed: () async {
+                                      String? url =
+                                          await showSupabaseImagePickerModal(
+                                            context,
+                                          );
+                                      setState(() {
+                                        _imageUrl = url;
+                                      });
+                                    },
+                                    icon: FontAwesomeIcons.pen,
+                                    text: getText('edit_image'),
+                                  ),
+                                ),
                               Transform.translate(
                                 offset: Offset(0, 100),
                                 child: SizedBox(
@@ -441,19 +539,10 @@ await Future.delayed(Duration(seconds: 2));
                             ],
                           ),
                         ),
-                        
-                        if (widget.anchorPoint.status ==
-                            AnchorPointStatus.created)
-                          draftingSection(),
-                        if (widget.anchorPoint.status ==
-                            AnchorPointStatus.drafted)
-                          craftingSection(),
-                        if (widget.anchorPoint.status ==
-                            AnchorPointStatus.crafted)
-                          readySection(),
-                        if (widget.anchorPoint.status ==
-                            AnchorPointStatus.archived)
-                          archivedSection(),
+                        if (_statusArchived) archivedSection(),
+                        if (_step3present) readySection(),
+                        if (_step2present) craftingSection(),
+                        if (_step1present) draftingSection(),
                         Container(
                           margin: EdgeInsets.symmetric(horizontal: 20),
                           child: Card(
@@ -498,7 +587,7 @@ await Future.delayed(Duration(seconds: 2));
                       child: AnimatedOpacity(
                         duration: Duration(milliseconds: 800),
                         opacity: _isAtBottom ? 0 : 1,
-                        child: FaIcon(FontAwesomeIcons.chevronDown)
+                        child: FaIcon(FontAwesomeIcons.chevronDown),
                       ),
                     ),
                   ),

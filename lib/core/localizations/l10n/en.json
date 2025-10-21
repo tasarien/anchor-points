@@ -50,5 +50,6 @@
   "ap_status_1" : "Prepare",
 "ap_status_2" : "Crafting",
 "ap_status_3" : "Ready",
-"ap_status_4" : "Archived"
+"ap_status_4" : "Archived",
+"edit_image" : "Change image"
 }

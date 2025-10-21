@@ -7,6 +7,7 @@ class AnchorPoint {
   final String? name;
   final String? description;
   final AnchorPointStatus status;
+  final String? imageUrl;
 
   AnchorPoint({
     required this.id,
@@ -14,6 +15,7 @@ class AnchorPoint {
     this.name,
     this.description,
     required this.status,
+    this.imageUrl,
   });
 
   factory AnchorPoint.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class AnchorPoint {
         (e) => e.name == (json['status'] as String),
         orElse: () => AnchorPointStatus.created,
       ),
+      imageUrl: json['image_url'],
     );
   }
 
@@ -36,6 +39,7 @@ class AnchorPoint {
       'name': name,
       'description': description,
       'status': status.name,
+      'image_url': imageUrl,
     };
   }
 
