@@ -195,24 +195,85 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
   @override
   Widget build(BuildContext context) {
     final appData = context.watch<DataProvider>();
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     Widget draftingSection() {
-      return Card(child: Container(width: 400, child: Text("Time to draft")));
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Card(
+          child: Container(
+            width: double.infinity,
+            constraints: BoxConstraints(maxWidth: 400, minHeight: 60),
+            child: Text("Time to draft"),
+          ),
+        ),
+      );
     }
 
     Widget craftingSection() {
-      return Card(child: Container(width: 350, child: Text("Time to craft")));
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Card(
+          child: Container(
+            width: double.infinity,
+            constraints: BoxConstraints(maxWidth: 400, minHeight: 60),
+            child: Text("Time to craft"),
+          ),
+        ),
+      );
     }
 
     Widget readySection() {
-      return Card(child: Container(width: 300, child: Text("Ready")));
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 60),
+        child: Card(
+          child: Container(
+            width: double.infinity,
+            constraints: BoxConstraints(maxWidth: 400, minHeight: 60),
+            child: Text("Ready"),
+          ),
+        ),
+      );
     }
 
     Widget archivedSection() {
       return Card(child: Text("Archived"));
     }
 
-    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    Widget _descriptionSection() {
+      return Container(
+        constraints: BoxConstraints(maxWidth: 400),
+        margin: EdgeInsets.symmetric(horizontal: 20),
+        child: Card(
+          child: SizedBox(
+            child: TextField(
+              controller: _descriptionController,
+              textAlign: TextAlign.center,
+              readOnly: !_editMode,
+              minLines: 1,
+              maxLines: 10,
+              enableInteractiveSelection: _editMode,
+              decoration: InputDecoration(
+                fillColor: colorScheme.surface,
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                    color: _editMode ? colorScheme.error : colorScheme.tertiary,
+                    width: _editMode ? 2 : 1,
+                  ),
+                ),
+                focusColor: _editMode
+                    ? colorScheme.error
+                    : colorScheme.tertiary,
+                hintText: _descriptionController.text.isEmpty
+                    ? getText('no_desc_provided')
+                    : _descriptionController.text,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -543,39 +604,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
                         if (_step3present) readySection(),
                         if (_step2present) craftingSection(),
                         if (_step1present) draftingSection(),
-                        Container(
-                          margin: EdgeInsets.symmetric(horizontal: 20),
-                          child: Card(
-                            child: SizedBox(
-                              child: TextField(
-                                controller: _descriptionController,
-                                textAlign: TextAlign.center,
-                                readOnly: !_editMode,
-                                minLines: 1,
-                                maxLines: 10,
-                                enableInteractiveSelection: _editMode,
-                                decoration: InputDecoration(
-                                  fillColor: colorScheme.surface,
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: BorderSide(
-                                      color: _editMode
-                                          ? colorScheme.error
-                                          : colorScheme.tertiary,
-                                      width: _editMode ? 2 : 1,
-                                    ),
-                                  ),
-                                  focusColor: _editMode
-                                      ? colorScheme.error
-                                      : colorScheme.tertiary,
-                                  hintText: _descriptionController.text.isEmpty
-                                      ? getText('no_desc_provided')
-                                      : _descriptionController.text,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                        _descriptionSection(),
                       ],
                     ),
                   ),
