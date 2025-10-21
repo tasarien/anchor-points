@@ -51,5 +51,11 @@
 "ap_status_2" : "Crafting",
 "ap_status_3" : "Ready",
 "ap_status_4" : "Archived",
-"edit_image" : "Change image"
+"edit_image" : "Change image",
+"drafting_screen_title": "Drafting",
+  "no_segments_yet": "No segments yet",
+  "add_segment": "Add Segment",
+  "segment_name": "Segment Name",
+  "segment_prompt": "Prompt",
+  "symbol": "Symbol"
 }

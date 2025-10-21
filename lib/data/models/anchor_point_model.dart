@@ -1,3 +1,4 @@
+import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
 import 'package:anchor_point_app/presentations/widgets/from%20models/anchor_point_widget.dart';
 import 'package:anchor_point_app/presentations/widgets/from%20models/anchor_point_widget_small.dart';
 
@@ -8,6 +9,7 @@ class AnchorPoint {
   final String? description;
   final AnchorPointStatus status;
   final String? imageUrl;
+  final List<SegmentPrompt>? segmentPrompts;
 
   AnchorPoint({
     required this.id,
@@ -16,6 +18,7 @@ class AnchorPoint {
     this.description,
     required this.status,
     this.imageUrl,
+    this.segmentPrompts,
   });
 
   factory AnchorPoint.fromJson(Map<String, dynamic> json) {
@@ -29,6 +32,11 @@ class AnchorPoint {
         orElse: () => AnchorPointStatus.created,
       ),
       imageUrl: json['image_url'],
+      segmentPrompts:
+          (json['segment_prompts'] as List<Map<String, dynamic>>?)
+              ?.map((segment) => SegmentPrompt.fromJson(segment))
+              .toList() ??
+          null,
     );
   }
 

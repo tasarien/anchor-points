@@ -4,6 +4,8 @@ import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/screens/create_anchor_point_screen.dart';
+import 'package:anchor_point_app/presentations/screens/drafting_screen.dart';
+import 'package:anchor_point_app/presentations/screens/main_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/other_AP_screens.dart';
 import 'package:anchor_point_app/presentations/widgets/drawers/image_picker.dart';
 import 'package:anchor_point_app/presentations/widgets/global/info_box.dart';
@@ -37,6 +39,11 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
   );
   ScrollController _scrollController = ScrollController();
 
+  // GlobalKeys for sections
+  final GlobalKey _draftingSectionKey = GlobalKey();
+  final GlobalKey _craftingSectionKey = GlobalKey();
+  final GlobalKey _readySectionKey = GlobalKey();
+
   bool _step1present = false;
   bool _step2present = false;
   bool _step3present = false;
@@ -59,7 +66,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     // Check initial state after layout
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _checkIfAtBottom();
-      await Future.delayed(Duration(milliseconds: 500));
+
       stepByStatus();
     });
   }
@@ -87,6 +94,32 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
       setState(() {
         _isAtBottom = false;
       });
+    }
+  }
+
+  // Scroll to section based on step index
+  void _scrollToSection(int stepIndex) {
+    GlobalKey? targetKey;
+
+    switch (stepIndex) {
+      case 0:
+        if (_step1present) targetKey = _draftingSectionKey;
+        break;
+      case 1:
+        if (_step2present) targetKey = _craftingSectionKey;
+        break;
+      case 2:
+        if (_step3present) targetKey = _readySectionKey;
+        break;
+    }
+
+    if (targetKey?.currentContext != null) {
+      Scrollable.ensureVisible(
+        targetKey!.currentContext!,
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.5, // Center the section in viewport
+      );
     }
   }
 
@@ -180,6 +213,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     setState(() {
       _progressCardOpened = true;
     });
+    await Future.delayed(Duration(milliseconds: 500));
     for (int i = 0; i <= iterations; i++) {
       await Future.delayed(Durations.medium1);
       setState(() {
@@ -197,42 +231,78 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     final appData = context.watch<DataProvider>();
     ColorScheme colorScheme = Theme.of(context).colorScheme;
 
-    Widget draftingSection() {
+    Widget statusCard(
+      double padding,
+      Widget content,
+      IconData icon, {
+      GlobalKey? key,
+     
+    }) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Card(
-          child: Container(
-            width: double.infinity,
-            constraints: BoxConstraints(maxWidth: 400, minHeight: 60),
-            child: Text("Time to draft"),
-          ),
+        key: key,
+        padding: EdgeInsets.symmetric(horizontal: padding),
+        child: Row(
+          spacing: 10,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FaIcon(icon, size: 10),
+            
+            Card(
+              
+              child: Container(
+                width: double.infinity,
+                constraints: BoxConstraints(
+                  maxWidth: 400 - padding,
+                  minHeight: 60,
+                ),
+                child: content,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget draftingSection() {
+      Widget content = Container(
+        
+      );
+      return GestureDetector(
+        onTap: () {
+          widget.anchorPoint.status == AnchorPointStatus.created
+              ? Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        DraftingScreen(anchorPoint: widget.anchorPoint),
+                  ),
+                )
+              : null;
+        },
+        child: statusCard(
+          20,
+          content,
+          AnchorPointIcons.anchor_point_step1,
+          key: _draftingSectionKey,
+          
         ),
       );
     }
 
     Widget craftingSection() {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Card(
-          child: Container(
-            width: double.infinity,
-            constraints: BoxConstraints(maxWidth: 400, minHeight: 60),
-            child: Text("Time to craft"),
-          ),
-        ),
+      return statusCard(
+        40,
+        Text("Crafting"),
+        AnchorPointIcons.anchor_point_step2,
+        key: _craftingSectionKey,
       );
     }
 
     Widget readySection() {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 60),
-        child: Card(
-          child: Container(
-            width: double.infinity,
-            constraints: BoxConstraints(maxWidth: 400, minHeight: 60),
-            child: Text("Ready"),
-          ),
-        ),
+      return statusCard(
+        60,
+        Text("Ready"),
+        AnchorPointIcons.anchor_point_step3,
+        key: _readySectionKey,
       );
     }
 
@@ -503,7 +573,9 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
                                                   child: Center(
                                                     child: WholeButton(
                                                       icon: icon(),
-                                                      onPressed: () {},
+                                                      onPressed: () {
+                                                        _scrollToSection(index);
+                                                      },
                                                       disabled:
                                                           index >
                                                           completedStepIndex,

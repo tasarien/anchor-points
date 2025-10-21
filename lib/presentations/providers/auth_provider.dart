@@ -71,7 +71,7 @@ class AuthProvider extends ChangeNotifier {
     await Supabase.instance.client.auth.signOut();
     DataProvider appData = Provider.of<DataProvider>(context, listen: false);
     appData.clearData();
-    Navigator.of(context).pop();
+    
   }
 
   Future<void> resetPassword(String email) async {
