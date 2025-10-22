@@ -30,6 +30,7 @@ dependencies:
   step_progress: ^2.7.0
   animated_icon: ^0.0.9
   image_picker: ^1.2.0
+  emoji_picker_flutter: ^4.3.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1

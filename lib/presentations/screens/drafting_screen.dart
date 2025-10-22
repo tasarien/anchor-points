@@ -1,8 +1,10 @@
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
+import 'package:anchor_point_app/presentations/widgets/drawers/emoji_picker.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_scaffold_body.dart';
+import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -22,7 +24,8 @@ class _DraftingScreenState extends State<DraftingScreen> {
   @override
   void initState() {
     super.initState();
-    _segmentPrompts = (widget.anchorPoint.segmentPrompts != null &&
+    _segmentPrompts =
+        (widget.anchorPoint.segmentPrompts != null &&
             widget.anchorPoint.segmentPrompts!.isNotEmpty)
         ? List<SegmentPrompt>.from(widget.anchorPoint.segmentPrompts!)
         : [];
@@ -73,29 +76,32 @@ class _DraftingScreenState extends State<DraftingScreen> {
   Widget _buildAddButton({required int index}) {
     return WholeButton(
       key: ValueKey("add_button_$index"),
-      
-      
-        onPressed: () => _addSegment(index: index),
-        icon: FontAwesomeIcons.circlePlus,
-        text: getText("add_segment"),
-        wide: true,
-      
+
+      onPressed: () => _addSegment(index: index),
+      icon: FontAwesomeIcons.circlePlus,
+      text: getText("add_segment"),
+      wide: true,
+      suggested: false,
     );
   }
 
   Widget _buildSegmentCard(int index) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
     final segment = _segmentPrompts[index];
     final nameController = TextEditingController(text: segment.name);
     final symbolController = TextEditingController(text: segment.symbol);
     final promptController = TextEditingController(text: segment.prompt);
 
     // Avoid flicker by only setting text initially
-    nameController.selection =
-        TextSelection.collapsed(offset: nameController.text.length);
-    symbolController.selection =
-        TextSelection.collapsed(offset: symbolController.text.length);
-    promptController.selection =
-        TextSelection.collapsed(offset: promptController.text.length);
+    nameController.selection = TextSelection.collapsed(
+      offset: nameController.text.length,
+    );
+    symbolController.selection = TextSelection.collapsed(
+      offset: symbolController.text.length,
+    );
+    promptController.selection = TextSelection.collapsed(
+      offset: promptController.text.length,
+    );
 
     return Card(
       key: ValueKey("segment_card_$index"),
@@ -104,14 +110,24 @@ class _DraftingScreenState extends State<DraftingScreen> {
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Row(
               children: [
-                const ReorderableDragStartListener(
-                  index: 0, // replaced dynamically below
-                  child: Icon(Icons.drag_handle, color: Colors.grey),
+                SizedBox(
+                  width: 60,
+                  child: GestureDetector(
+                    onTap: () async {
+                      String? newSymbol = await openEmojiPicker(context);
+                      if (newSymbol != symbolController.text &&
+                          newSymbol != null) {
+                        _updateSegment(index, 'symbol', newSymbol);
+                      }
+                    },
+                    child: WholeSymbol(symbol: symbolController.text),
+                  ),
                 ),
+                SizedBox(width: 10),
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
@@ -123,26 +139,15 @@ class _DraftingScreenState extends State<DraftingScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                SizedBox(
-                  width: 60,
-                  child: TextField(
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      labelText: getText("symbol"),
-                      border: const OutlineInputBorder(),
-                    ),
-                    controller: symbolController,
-                    onChanged: (val) => _updateSegment(index, 'symbol', val),
-                  ),
-                ),
+
                 IconButton(
                   onPressed: () => _removeSegment(index),
-                  icon: const Icon(Icons.delete_outline),
-                  color: Colors.redAccent,
+                  icon: const FaIcon(FontAwesomeIcons.trash),
+                  color: colorScheme.error,
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             TextField(
               maxLines: 2,
               decoration: InputDecoration(
@@ -152,6 +157,8 @@ class _DraftingScreenState extends State<DraftingScreen> {
               controller: promptController,
               onChanged: (val) => _updateSegment(index, 'prompt', val),
             ),
+            SizedBox(height: 8),
+            _buildAddButton(index: index),
           ],
         ),
       ),
@@ -172,19 +179,20 @@ class _DraftingScreenState extends State<DraftingScreen> {
                     children: [
                       Text(
                         getText("no_segments_yet"),
-                        style: const TextStyle(fontSize: 16, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      _buildAddButton(index: 0)
+                      _buildAddButton(index: 0),
                     ],
                   ),
                 )
               : ReorderableListView(
                   onReorder: _reorderSegments,
-                  proxyDecorator: (child, index, animation) => Material(
-                    color: Colors.transparent,
-                    child: child,
-                  ),
+                  proxyDecorator: (child, index, animation) =>
+                      Material(color: Colors.transparent, child: child),
                   children: [
                     for (int i = 0; i < _segmentPrompts.length; i++) ...[
                       // Each segment card
@@ -193,8 +201,6 @@ class _DraftingScreenState extends State<DraftingScreen> {
                         index: i,
                         child: _buildSegmentCard(i),
                       ),
-                      // Add button between items
-                      _buildAddButton(index: i),
                     ],
                   ],
                 ),

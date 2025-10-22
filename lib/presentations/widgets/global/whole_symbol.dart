@@ -7,11 +7,11 @@ class WholeSymbol extends StatefulWidget {
   final String symbol;
   final Size size;
 
-  const WholeSymbol(
-      {super.key,
-      required this.symbol,
-      this.size = const Size(40, 40),
-   });
+  const WholeSymbol({
+    super.key,
+    required this.symbol,
+    this.size = const Size(60, 60),
+  });
 
   @override
   State<WholeSymbol> createState() => _WholeSymbolState();
@@ -20,41 +20,48 @@ class WholeSymbol extends StatefulWidget {
 class _WholeSymbolState extends State<WholeSymbol> {
   late bool isSelected = false;
 
-
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return FilledButton(
-      onPressed: () {
-      },
+      onPressed: null,
       style: ButtonStyle(
         foregroundColor: WidgetStateColor.fromMap({
           WidgetState.pressed: colorScheme.onSurface,
-          WidgetState.any: colorScheme.surface
+          WidgetState.any: colorScheme.surface,
         }),
         shadowColor: WidgetStatePropertyAll(Colors.black),
         elevation: WidgetStatePropertyAll(3),
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
-        backgroundColor:
-            WidgetStateColor.fromMap({WidgetState.any: Theme.of(context).scaffoldBackgroundColor}),
+        backgroundColor: WidgetStateColor.fromMap({
+          WidgetState.any: Theme.of(context).scaffoldBackgroundColor,
+        }),
         minimumSize: WidgetStatePropertyAll(widget.size),
         maximumSize: WidgetStatePropertyAll(widget.size),
         shape: WidgetStatePropertyAll(
           RoundedSuperellipseBorder(
-              side: BorderSide(
-                  color:
-                      isSelected ? colorScheme.error : colorScheme.secondary),
-              borderRadius: BorderRadiusGeometry.all(Radius.circular(10))),
+            side: BorderSide(
+              color: isSelected ? colorScheme.error : colorScheme.secondary,
+            ),
+            borderRadius: BorderRadiusGeometry.all(Radius.circular(10)),
+          ),
         ),
       ),
-      child: Stack(fit: StackFit.loose, alignment: Alignment.center, children: [
-        Icon(Icons.circle_outlined, size: 35, color: AppColors.darkTeal),
-        Text(
-          widget.symbol,
-          style: TextStyle(
-              fontFamily: "Emoji", color: AppColors.beigeLight, fontSize: 28),
-        )
-      ]),
+      child: Stack(
+        fit: StackFit.loose,
+        alignment: Alignment.center,
+        children: [
+          Icon(Icons.circle_outlined, size: 35, color: AppColors.darkTeal),
+          Text(
+            widget.symbol,
+            style: TextStyle(
+              fontFamily: "Emoji",
+              color: AppColors.beigeLight,
+              fontSize: 28,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
