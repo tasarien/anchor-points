@@ -31,15 +31,16 @@ class _WholePopupState extends State<WholePopup> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return CustomPopup(
       isLongPress: widget.longpress,
-      arrowColor: colorScheme.secondary,
-      backgroundColor: colorScheme.secondary,
+      arrowColor: colorScheme.tertiary,
+      backgroundColor: colorScheme.tertiary,
       animationCurve: Curves.bounceOut,
       animationDuration: Durations.long1,
+      contentPadding: EdgeInsets.all(4),
       barrierColor: widget.barrier ? Colors.black87 : null,
       content: Container(
         padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: widget.popupColor ?? colorScheme.surface,
+          color: widget.popupColor ?? Theme.of(context).scaffoldBackgroundColor,
           border: Border.all(
             color: widget.suggested
                 ? colorScheme.onSurface

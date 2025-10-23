@@ -3,6 +3,7 @@ import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
 import 'package:anchor_point_app/presentations/widgets/drawers/emoji_picker.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
+import 'package:anchor_point_app/presentations/widgets/global/whole_popup.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_scaffold_body.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:flutter/material.dart';
@@ -103,65 +104,109 @@ class _DraftingScreenState extends State<DraftingScreen> {
       offset: promptController.text.length,
     );
 
-    return Card(
-      key: ValueKey("segment_card_$index"),
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+    return Expanded(
+      child: Card(
+        key: ValueKey("segment_card_$index"),
+        elevation: 2,
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
           children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: 60,
-                  child: GestureDetector(
-                    onTap: () async {
-                      String? newSymbol = await openEmojiPicker(context);
-                      if (newSymbol != symbolController.text &&
-                          newSymbol != null) {
-                        _updateSegment(index, 'symbol', newSymbol);
-                      }
-                    },
-                    child: WholeSymbol(symbol: symbolController.text),
-                  ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      labelText: getText("segment_name"),
-                      border: const OutlineInputBorder(),
-                    ),
-                    controller: nameController,
-                    onChanged: (val) => _updateSegment(index, 'name', val),
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                IconButton(
-                  onPressed: () => _removeSegment(index),
-                  icon: const FaIcon(FontAwesomeIcons.trash),
-                  color: colorScheme.error,
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              maxLines: 2,
-              decoration: InputDecoration(
-                labelText: getText("segment_prompt"),
-                border: const OutlineInputBorder(),
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: ReorderableDragStartListener(
+                child: Center(child: FaIcon(FontAwesomeIcons.list)),
+                enabled: true,
+                index: index,
               ),
-              controller: promptController,
-              onChanged: (val) => _updateSegment(index, 'prompt', val),
             ),
-            SizedBox(height: 8),
-            _buildAddButton(index: index),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 60,
+                          child: GestureDetector(
+                            onTap: () async {
+                              String? newSymbol = await openEmojiPicker(
+                                context,
+                              );
+                              if (newSymbol != symbolController.text &&
+                                  newSymbol != null) {
+                                _updateSegment(index, 'symbol', newSymbol);
+                              }
+                            },
+                            child: WholeSymbol(symbol: symbolController.text),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              labelText: getText("segment_name"),
+                            ),
+                            controller: nameController,
+                            onChanged: (val) =>
+                                _updateSegment(index, 'name', val),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        WholePopup(
+                          content: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              WholeButton(
+                                icon: FontAwesomeIcons.trash,
+                                circleColor: colorScheme.error,
+                                onPressed: () => {
+                                  Navigator.of(context).pop(),
+                                  _removeSegment(index),
+                                },
+                              ),
+                              WholeButton(),
+                            ],
+                          ),
+                          child: SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Center(
+                              child: FaIcon(FontAwesomeIcons.ellipsisVertical),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: getText("segment_prompt"),
+                        border: const OutlineInputBorder(),
+                      ),
+                      controller: promptController,
+                      onChanged: (val) => _updateSegment(index, 'prompt', val),
+                    ),
+                    SizedBox(height: 8),
+                    _buildAddButton(index: index),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildToolBox(BuildContext context) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      color: colorScheme.tertiary,
+      child: Row(children: [WholeButton(), WholeButton()]),
     );
   }
 
@@ -169,41 +214,46 @@ class _DraftingScreenState extends State<DraftingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(getText("drafting_screen_title"))),
-      body: WholeScaffoldBody(
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: _segmentPrompts.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        getText("no_segments_yet"),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
+      body: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            _buildToolBox(context),
+            _segmentPrompts.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          getText("no_segments_yet"),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildAddButton(index: 0),
-                    ],
+                        const SizedBox(height: 12),
+                        _buildAddButton(index: 0),
+                      ],
+                    ),
+                  )
+                : Expanded(
+                    child: ReorderableListView(
+                      onReorder: _reorderSegments,
+
+                      children: [
+                        for (int i = 0; i < _segmentPrompts.length; i++) ...[
+                          // Each segment card
+                          ReorderableDragStartListener(
+                            key: ValueKey("segment_item_$i"),
+                            enabled: false,
+                            index: i,
+                            child: _buildSegmentCard(i),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                )
-              : ReorderableListView(
-                  onReorder: _reorderSegments,
-                  proxyDecorator: (child, index, animation) =>
-                      Material(color: Colors.transparent, child: child),
-                  children: [
-                    for (int i = 0; i < _segmentPrompts.length; i++) ...[
-                      // Each segment card
-                      ReorderableDragStartListener(
-                        key: ValueKey("segment_item_$i"),
-                        index: i,
-                        child: _buildSegmentCard(i),
-                      ),
-                    ],
-                  ],
-                ),
+          ],
         ),
       ),
     );

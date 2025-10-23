@@ -233,14 +233,14 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.darkTealLight,
+      fillColor: AppColors.veryDarkTeal,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(color: AppColors.sageGreen),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AppColors.beige, width: 2),
+        borderSide: BorderSide(color: AppColors.beige, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -258,38 +258,59 @@ class AppTheme {
     textTheme: TextTheme(
       displayLarge: TextStyle(color: AppColors.beige, fontFamily: 'EBGaramond'),
       displayMedium: TextStyle(
-        color: AppColors.beige,
+        color: AppColors.beigeLight,
         fontFamily: 'EBGaramond',
       ),
       displaySmall: TextStyle(color: AppColors.beige, fontFamily: 'EBGaramond'),
       headlineLarge: TextStyle(
-        color: AppColors.beige,
+        color: AppColors.beigeLight,
         fontFamily: 'EBGaramond',
       ),
       headlineMedium: TextStyle(
-        color: AppColors.beige,
+        color: AppColors.beigeLight,
         fontFamily: 'EBGaramond',
       ),
       headlineSmall: TextStyle(
-        color: AppColors.beige,
+        color: AppColors.beigeLight,
         fontFamily: 'EBGaramond',
       ),
       titleLarge: TextStyle(
-        color: AppColors.beige,
+        color: AppColors.beigeLight,
         fontWeight: FontWeight.bold,
         fontFamily: 'EBGaramond',
       ),
-      titleMedium: TextStyle(color: AppColors.beige, fontFamily: 'EBGaramond'),
-      titleSmall: TextStyle(color: AppColors.beige, fontFamily: 'EBGaramond'),
-      bodyLarge: TextStyle(color: AppColors.beige, fontFamily: 'EBGaramond'),
-      bodyMedium: TextStyle(color: AppColors.beige, fontFamily: 'EBGaramond'),
+      titleMedium: TextStyle(
+        color: AppColors.beigeLight,
+        fontFamily: 'EBGaramond',
+      ),
+      titleSmall: TextStyle(
+        color: AppColors.beigeLight,
+        fontFamily: 'EBGaramond',
+      ),
+      bodyLarge: TextStyle(
+        color: AppColors.beigeLight,
+        fontFamily: 'EBGaramond',
+      ),
+      bodyMedium: TextStyle(
+        color: AppColors.beigeLight,
+        fontFamily: 'EBGaramond',
+      ),
       bodySmall: TextStyle(
         color: AppColors.beige.withOpacity(0.8),
         fontFamily: 'EBGaramond',
       ),
-      labelLarge: TextStyle(color: AppColors.beige, fontFamily: 'EBGaramond'),
-      labelMedium: TextStyle(color: AppColors.beige, fontFamily: 'EBGaramond'),
-      labelSmall: TextStyle(color: AppColors.beige, fontFamily: 'EBGaramond'),
+      labelLarge: TextStyle(
+        color: AppColors.beigeLight,
+        fontFamily: 'EBGaramond',
+      ),
+      labelMedium: TextStyle(
+        color: AppColors.beigeLight,
+        fontFamily: 'EBGaramond',
+      ),
+      labelSmall: TextStyle(
+        color: AppColors.beigeLight,
+        fontFamily: 'EBGaramond',
+      ),
     ),
   );
 }
