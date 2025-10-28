@@ -73,7 +73,9 @@ class _AnchorPointWidgetSmallState extends State<AnchorPointWidgetSmall> {
                 strokeAlign: BorderSide.strokeAlignOutside,
               ),
             ),
-            child: Image.asset('assets/images/auth_gate.png', fit: BoxFit.fill),
+            child: widget.anchorPoint.imageUrl != null
+                ? Image.network(widget.anchorPoint.imageUrl!, fit: BoxFit.fill)
+                : Image.asset('assets/images/empty_landscape.png'),
           ),
         ],
       ),

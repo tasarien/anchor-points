@@ -33,7 +33,7 @@ class AnchorPoint {
       ),
       imageUrl: json['image_url'],
       segmentPrompts:
-          (json['segment_prompts'] as List<Map<String, dynamic>>?)
+          (json['segment_prompts'] as List<dynamic>?)
               ?.map((segment) => SegmentPrompt.fromJson(segment))
               .toList() ??
           null,

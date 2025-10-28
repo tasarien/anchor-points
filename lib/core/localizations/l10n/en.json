@@ -48,14 +48,24 @@
   "no_desc_provided" : "There is no description yet.",
   "anchor_point_succesfully_updated" : "Anchor Point have been updated.",
   "ap_status_1" : "Prepare",
-"ap_status_2" : "Crafting",
-"ap_status_3" : "Ready",
-"ap_status_4" : "Archived",
-"edit_image" : "Change image",
-"drafting_screen_title": "Drafting",
-  "no_segments_yet": "No segments yet",
+  "ap_status_2" : "Crafting",
+  "ap_status_3" : "Ready",
+  "ap_status_4" : "Archived",
+  "edit_image" : "Change image",
+  "drafting_screen_title": "Drafting",
   "add_segment": "Add Segment",
   "segment_name": "Segment Name",
   "segment_prompt": "Prompt",
-  "symbol": "Symbol"
+  "symbol": "Symbol",
+  "use_templates" : "Use templates",
+  "or" : "or",
+  "no_segments_yet" : "There is no segments yet.",
+  "you_can_use_template" : "You can use one of prepared templates:",
+  "add_first_segment" : "Start from scratch by adding first segment:",
+  "use_only_seven_segments" : "You can use only first seven segments. You can rearange segments and decide wich the best suits your Anchor Point.",
+  "segment_excluded" : "This segment will be not used on Anchor Point. Only first 7 will be.",
+  "succes_in_updating_prompts" : "Your segments are drafted. Now it's time to crafting phase."
+  
+ 
+
 }
