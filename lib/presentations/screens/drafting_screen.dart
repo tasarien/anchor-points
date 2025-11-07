@@ -92,7 +92,6 @@ class _DraftingScreenState extends State<DraftingScreen> {
     final symbolController = TextEditingController(text: segment.symbol);
     final promptController = TextEditingController(text: segment.prompt);
 
-    // Avoid flicker by only setting text initially
     nameController.selection = TextSelection.collapsed(
       offset: nameController.text.length,
     );
