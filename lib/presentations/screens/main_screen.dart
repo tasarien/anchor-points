@@ -1,4 +1,5 @@
 import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
+import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/anchor_point_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/main_anchor_point.dart';
@@ -19,14 +20,6 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  PersistentTabController _controller = PersistentTabController();
-  List<Widget> _screens = [
-    MainAnchorPointScreen(),
-    OtherAPScreen(),
-    NotificationsScreen(),
-    SettingsScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
@@ -37,8 +30,13 @@ class _MainScreenState extends State<MainScreen> {
           ? Center(child: LoadingIndicator())
           : PersistentTabView(
               context,
-              controller: _controller,
-              screens: _screens,
+              controller: appData.tabController,
+              screens: [
+                MainAnchorPointScreen(),
+                OtherAPScreen(),
+                NotificationsScreen(),
+                SettingsScreen(),
+              ],
               items: [
                 PersistentBottomNavBarItem(
                   icon: FaIcon(
@@ -54,26 +52,26 @@ class _MainScreenState extends State<MainScreen> {
                 ),
                 PersistentBottomNavBarItem(
                   icon: FaIcon(
-                    FontAwesomeIcons.circleNodes,
+                    FontAwesomeIcons.ellipsis,
                     color: colorScheme.onSurface,
                   ),
                   inactiveIcon: FaIcon(
                     FontAwesomeIcons.circleNodes,
                     color: colorScheme.tertiary,
                   ),
-                  title: "Other Anchor Points",
+                  title: "All Anchors",
                   activeColorPrimary: colorScheme.error,
                 ),
                 PersistentBottomNavBarItem(
                   icon: FaIcon(
-                    FontAwesomeIcons.bell,
+                    FontAwesomeIcons.handPointUp,
                     color: colorScheme.onSurface,
                   ),
                   inactiveIcon: FaIcon(
-                    FontAwesomeIcons.bell,
+                    FontAwesomeIcons.hand,
                     color: colorScheme.tertiary,
                   ),
-                  title: "Notifications",
+                  title: "Requests",
                   activeColorPrimary: colorScheme.error,
                 ),
                 PersistentBottomNavBarItem(
@@ -89,7 +87,7 @@ class _MainScreenState extends State<MainScreen> {
                   activeColorPrimary: colorScheme.error,
                 ),
               ],
-              handleAndroidBackButtonPress: true, // Default is true.
+              //handleAndroidBackButtonPress: true,
               resizeToAvoidBottomInset:
                   true, // This needs to be true if you want to move up the screen on a non-scrollable screen when keyboard appears. Default is true.
               stateManagement: true, // Default is true.

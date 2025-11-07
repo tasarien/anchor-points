@@ -64,7 +64,39 @@
   "add_first_segment" : "Start from scratch by adding first segment:",
   "use_only_seven_segments" : "You can use only first seven segments. You can rearange segments and decide wich the best suits your Anchor Point.",
   "segment_excluded" : "This segment will be not used on Anchor Point. Only first 7 will be.",
-  "succes_in_updating_prompts" : "Your segments are drafted. Now it's time to crafting phase."
+  "succes_in_updating_prompts" : "Your segments are drafted. Now it's time to crafting phase.",
+  "crafting_sheet_title": "Craft Your Anchor Point",
+  "crafting_sheet_subtitle": "Choose who will write and record your Anchor Point",
+  
+  "crafting_writing_title": "Writing",
+  "crafting_writing_subtitle": "Who will write the content?",
+  
+  "crafting_recording_title": "Recording",
+  "crafting_recording_subtitle": "Who will record the audio?",
+  
+  "crafting_option_you": "You",
+  "crafting_option_companion": "Companion",
+  "crafting_option_ai": "AI",
+  "crafting_option_ai_voice": "AI Voice",
+  
+  "crafting_summary_title": "Your Selection",
+  
+  "crafting_summary_you_you": "Fully personal - you're creating everything yourself",
+  "crafting_summary_you_companion": "You write it, companion adds their voice",
+  "crafting_summary_you_ai": "You write it, AI handles the recording",
+  
+  "crafting_summary_companion_you": "Companion writes, you add your personal voice",
+  "crafting_summary_companion_companion": "Most personal and heartfelt approach",
+  "crafting_summary_companion_ai": "Companion writes with AI voice support",
+  
+  "crafting_summary_ai_you": "AI writes, you add your authentic voice",
+  "crafting_summary_ai_companion": "AI writes, companion brings it to life",
+  "crafting_summary_ai_ai": "Quickest option, less personal touch",
+  
+  "crafting_summary_balanced": "Balanced approach combining different contributors",
+  
+  "crafting_continue_button": "Continue",
+  "make_request" : "Make request"
   
  
 

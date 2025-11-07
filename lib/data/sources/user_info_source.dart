@@ -5,7 +5,11 @@ class SupabaseUserInfoSource {
   final supabase = Supabase.instance.client;
 
   Future<Map<String, dynamic>> getUserInfo() async {
-    final response = await supabase.from('profiles').select().single();
+    final response = await supabase
+        .from('profiles')
+        .select()
+        .eq("user_id", supabase.auth.currentUser!.id)
+        .single();
 
     return response;
   }

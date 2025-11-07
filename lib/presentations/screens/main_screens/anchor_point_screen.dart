@@ -7,7 +7,7 @@ import 'package:anchor_point_app/presentations/screens/create_anchor_point_scree
 import 'package:anchor_point_app/presentations/screens/drafting_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/other_AP_screens.dart';
-import 'package:anchor_point_app/presentations/widgets/drawers/crafting_bottom_sheet.dart';
+import 'package:anchor_point_app/presentations/screens/crafting_screen.dart';
 import 'package:anchor_point_app/presentations/widgets/drawers/image_picker.dart';
 import 'package:anchor_point_app/presentations/widgets/global/info_box.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator%20copy.dart';
@@ -22,9 +22,8 @@ import 'package:step_progress/step_progress.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AnchorPointScreen extends StatefulWidget {
-  final AnchorPoint anchorPoint;
-  const AnchorPointScreen({Key? key, required this.anchorPoint})
-    : super(key: key);
+  final DataProvider appData;
+  const AnchorPointScreen({Key? key, required this.appData}) : super(key: key);
 
   @override
   State<AnchorPointScreen> createState() => _AnchorPointScreenState();
@@ -132,9 +131,10 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
   }
 
   fillInputFields() {
-    _titleController.text = widget.anchorPoint.name!;
-    _descriptionController.text = widget.anchorPoint.description ?? "";
-    _imageUrl = widget.anchorPoint.imageUrl;
+    _titleController.text = widget.appData.currentAnchorPoint!.name!;
+    _descriptionController.text =
+        widget.appData.currentAnchorPoint!.description ?? "";
+    _imageUrl = widget.appData.currentAnchorPoint!.imageUrl;
   }
 
   void turnOnEditMode() {
@@ -150,20 +150,21 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
 
     Map<String, dynamic> updatedAnchorPoint = {};
 
-    if (widget.anchorPoint.name != _titleController.text) {
+    if (widget.appData.currentAnchorPoint!.name != _titleController.text) {
       updatedAnchorPoint['name'] = _titleController.text;
     }
 
-    if (widget.anchorPoint.description != _descriptionController.text) {
+    if (widget.appData.currentAnchorPoint!.description !=
+        _descriptionController.text) {
       updatedAnchorPoint['description'] = _descriptionController.text;
     }
 
-    if (widget.anchorPoint.imageUrl != _imageUrl) {
+    if (widget.appData.currentAnchorPoint!.imageUrl != _imageUrl) {
       updatedAnchorPoint['image_url'] = _imageUrl;
     }
 
     await SupabaseAnchorPointSource().updateAnchorPoint(
-      widget.anchorPoint.id,
+      widget.appData.currentAnchorPoint!.id,
       updatedAnchorPoint,
     );
 
@@ -197,7 +198,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
 
   void stepByStatus() async {
     int iterations = 0;
-    switch (widget.anchorPoint.status) {
+    switch (widget.appData.currentAnchorPoint!.status) {
       case AnchorPointStatus.created:
         iterations = 0;
         _step1present = true;
@@ -282,14 +283,16 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     }
 
     Widget draftingSection() {
-      Widget content = widget.anchorPoint.segmentPrompts == null
+      Widget content = widget.appData.currentAnchorPoint!.segmentPrompts == null
           ? GestureDetector(
               onTap: () {
-                widget.anchorPoint.status == AnchorPointStatus.created
+                widget.appData.currentAnchorPoint!.status ==
+                        AnchorPointStatus.created
                     ? Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) =>
-                              DraftingScreen(anchorPoint: widget.anchorPoint),
+                          builder: (context) => DraftingScreen(
+                            anchorPoint: widget.appData.currentAnchorPoint!,
+                          ),
                         ),
                       )
                     : null;
@@ -313,14 +316,17 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: widget.anchorPoint.segmentPrompts!.map((
-                        segment,
-                      ) {
-                        return WholeSymbol(
-                          symbol: segment.symbol,
-                          size: Size(30, 30),
-                        );
-                      }).toList(),
+                      children: widget
+                          .appData
+                          .currentAnchorPoint!
+                          .segmentPrompts!
+                          .map((segment) {
+                            return WholeSymbol(
+                              symbol: segment.symbol,
+                              size: Size(30, 30),
+                            );
+                          })
+                          .toList(),
                     ),
                   ),
                 ),
@@ -337,38 +343,43 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
                       padding: EdgeInsets.all(12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: widget.anchorPoint.segmentPrompts!.map((
-                          segment,
-                        ) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                WholeSymbol(
-                                  symbol: segment.symbol,
-                                  size: Size(36, 36),
+                        children: widget
+                            .appData
+                            .currentAnchorPoint!
+                            .segmentPrompts!
+                            .map((segment) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
                                 ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if ((segment.name ?? "").isNotEmpty)
-                                        Text(
-                                          segment.name ?? "",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    WholeSymbol(
+                                      symbol: segment.symbol,
+                                      size: Size(36, 36),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if ((segment.name ?? "").isNotEmpty)
+                                            Text(
+                                              segment.name ?? "",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
+                              );
+                            })
+                            .toList(),
                       ),
                     ),
                   ),
@@ -388,8 +399,10 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     Widget craftingSection() {
       Widget content = GestureDetector(
         onTap: () async {
-          widget.anchorPoint.status == AnchorPointStatus.drafted
-              ? await showCraftingBottomSheet(context)
+          widget.appData.currentAnchorPoint!.status == AnchorPointStatus.drafted
+              ? Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => CraftingScreen()),
+                )
               : null;
         },
         child: Center(child: Text(getText("no_segments_yet"))),
@@ -411,7 +424,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
       //           child: Row(
       //             mainAxisSize: MainAxisSize.max,
       //             mainAxisAlignment: MainAxisAlignment.spaceAround,
-      //             children: widget.anchorPoint.segmentPrompts!.map((
+      //             children: widget.appData.currentAnchorPoint!.segmentPrompts!.map((
       //               segment,
       //             ) {
       //               return WholeSymbol(
@@ -435,7 +448,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
       //             padding: EdgeInsets.all(12),
       //             child: Column(
       //               crossAxisAlignment: CrossAxisAlignment.stretch,
-      //               children: widget.anchorPoint.segmentPrompts!.map((
+      //               children: widget.appData.currentAnchorPoint!.segmentPrompts!.map((
       //                 segment,
       //               ) {
       //                 return Padding(
@@ -594,7 +607,10 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
                                       });
                                       await SupabaseAnchorPointSource()
                                           .deleteAnchorPoint(
-                                            widget.anchorPoint.id,
+                                            widget
+                                                .appData
+                                                .currentAnchorPoint!
+                                                .id,
                                           );
                                       setState(() {
                                         _loading = false;

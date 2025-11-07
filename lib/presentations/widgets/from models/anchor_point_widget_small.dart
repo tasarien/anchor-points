@@ -46,13 +46,9 @@ class _AnchorPointWidgetSmallState extends State<AnchorPointWidgetSmall> {
                     ),
                     IconButton(
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => AnchorPointScreen(
-                              anchorPoint: widget.anchorPoint,
-                            ),
-                          ),
-                        );
+                        appData.changeCurrentAnchorPoint(widget.anchorPoint);
+                        debugPrint(appData.currentAnchorPoint!.name);
+                        appData.changeCurrentTab(0);
                       },
                       icon: FaIcon(FontAwesomeIcons.chevronRight),
                     ),
