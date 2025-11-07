@@ -2,18 +2,25 @@ import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
 
 class SegmentPromptsTemplate {
   String name;
-  List<SegmentPrompt> segmentPrompts;
+  String? description;
+  List<SegmentPrompt> template;
+  String? imageUrl;
 
   SegmentPromptsTemplate({
     required this.name,
-    required this.segmentPrompts,
+    required this.template,
+    this.description,
+    this.imageUrl,
   });
 
-
-factory SegmentPromptsTemplate.fromJson(Map<String, dynamic> json) {
+  factory SegmentPromptsTemplate.fromJson(Map<String, dynamic> json) {
     return SegmentPromptsTemplate(
       name: json['name'],
-      segmentPrompts: (json['prompt'] as List<Map<String, dynamic>>).map((segment) => SegmentPrompt.fromJson(segment)).toList()
+      description: json['description'],
+      template: (json['template'] as List<dynamic>)
+          .map((segment) => SegmentPrompt.fromJson(segment))
+          .toList(),
+      imageUrl: json['image_url'],
     );
   }
 }

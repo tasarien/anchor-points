@@ -17,8 +17,6 @@ class MainAnchorPointScreen extends StatefulWidget {
 }
 
 class _MainAnchorPointScreenState extends State<MainAnchorPointScreen> {
-  AnchorPoint? currentAnchorPoint;
-
   String getText(String text) {
     return AppLocalizations.of(context).translate(text);
   }
@@ -74,27 +72,10 @@ class _MainAnchorPointScreenState extends State<MainAnchorPointScreen> {
   Widget build(BuildContext context) {
     final appData = context.watch<DataProvider>();
 
-    // Determine wich anchor point to display
-
-    if (appData.getAnchorPoints.isEmpty) {
-      currentAnchorPoint = null;
-    } else {
-      if (appData.userInfo!.pinnedAnchorPointId != null) {
-        debugPrint('there');
-        currentAnchorPoint = appData.getAnchorPoints.firstWhere(
-          (element) => element.id == appData.userInfo!.pinnedAnchorPointId,
-        );
-
-        debugPrint(currentAnchorPoint!.name.toString());
-      } else {
-        currentAnchorPoint = appData.getAnchorPoints.first;
-      }
-    }
-
     return Scaffold(
       body: Center(
-        child: currentAnchorPoint != null
-            ? AnchorPointScreen(anchorPoint: currentAnchorPoint!)
+        child: appData.currentAnchorPoint != null
+            ? AnchorPointScreen(appData: appData)
             : createFirstAPButton(),
       ),
     );

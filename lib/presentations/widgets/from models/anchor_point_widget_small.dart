@@ -46,13 +46,9 @@ class _AnchorPointWidgetSmallState extends State<AnchorPointWidgetSmall> {
                     ),
                     IconButton(
                       onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => AnchorPointScreen(
-                              anchorPoint: widget.anchorPoint,
-                            ),
-                          ),
-                        );
+                        appData.changeCurrentAnchorPoint(widget.anchorPoint);
+                        debugPrint(appData.currentAnchorPoint!.name);
+                        appData.changeCurrentTab(0);
                       },
                       icon: FaIcon(FontAwesomeIcons.chevronRight),
                     ),
@@ -73,7 +69,9 @@ class _AnchorPointWidgetSmallState extends State<AnchorPointWidgetSmall> {
                 strokeAlign: BorderSide.strokeAlignOutside,
               ),
             ),
-            child: Image.asset('assets/images/auth_gate.png', fit: BoxFit.fill),
+            child: widget.anchorPoint.imageUrl != null
+                ? Image.network(widget.anchorPoint.imageUrl!, fit: BoxFit.fill)
+                : Image.asset('assets/images/empty_landscape.png'),
           ),
         ],
       ),

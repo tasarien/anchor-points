@@ -45,7 +45,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: getText("settings_display_tab_title"),
                 subtitle: getText("settings_display_tab_description"),
                 icon: FontAwesomeIcons.sliders,
-                onTap: () => _navigateToToneAdjustment(context),
+                onTap: () => _navigateToDisplaySettings(context),
+              ),
+              const SizedBox(height: 16),
+              _buildSettingsButton(
+                context: context,
+                title: getText("settings_notifications_tab_title"),
+                subtitle: getText("settings_notification_tab_description"),
+                icon: FontAwesomeIcons.bell,
+                onTap: () => _navigateToNotificationsSettings(context),
+              ),
+              const SizedBox(height: 16),
+              _buildSettingsButton(
+                context: context,
+                title: getText("settings_companions_tab_title"),
+                subtitle: getText("settings_companion_tab_description"),
+                icon: FontAwesomeIcons.person,
+                onTap: () => _navigateToCompanionsSettings(context),
               ),
             ],
           ),
@@ -83,10 +99,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _navigateToToneAdjustment(BuildContext context) {
+  void _navigateToDisplaySettings(BuildContext context) {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => DisplayAdjustmentScreen()));
+  }
+
+  void _navigateToNotificationsSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => NotificationsSettingsScreen()),
+    );
+  }
+
+  void _navigateToCompanionsSettings(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => CompanionsSettingsScreen()));
   }
 }
 
@@ -218,6 +246,90 @@ class _DisplayAdjustmentScreenState extends State<DisplayAdjustmentScreen> {
                           settings.toggleDarkMode();
                         },
                       ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class NotificationsSettingsScreen extends StatelessWidget {
+  const NotificationsSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
+    AuthProvider auth = context.watch<AuthProvider>();
+
+    return Scaffold(
+      appBar: AppBar(title: Text(getText("settings_notifications_tab_title"))),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    spacing: 20,
+                    children: [
+                      SectionTab(
+                        text: getText(
+                          "settings_notifications_actions_tab_title",
+                        ),
+                      ),
+                      WholeButton(icon: FontAwesomeIcons.bell),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CompanionsSettingsScreen extends StatelessWidget {
+  const CompanionsSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
+    AuthProvider auth = context.watch<AuthProvider>();
+
+    return Scaffold(
+      appBar: AppBar(title: Text(getText("settings_companion_tab_title"))),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    spacing: 20,
+                    children: [
+                      SectionTab(
+                        text: getText("settings_companions_actions_tab_title"),
+                      ),
+                      WholeButton(icon: FontAwesomeIcons.person),
                     ],
                   ),
                 ),

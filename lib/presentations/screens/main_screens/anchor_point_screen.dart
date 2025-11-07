@@ -7,11 +7,13 @@ import 'package:anchor_point_app/presentations/screens/create_anchor_point_scree
 import 'package:anchor_point_app/presentations/screens/drafting_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/other_AP_screens.dart';
+import 'package:anchor_point_app/presentations/screens/crafting_screen.dart';
 import 'package:anchor_point_app/presentations/widgets/drawers/image_picker.dart';
 import 'package:anchor_point_app/presentations/widgets/global/info_box.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator%20copy.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_popup.dart';
+import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -20,9 +22,8 @@ import 'package:step_progress/step_progress.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AnchorPointScreen extends StatefulWidget {
-  final AnchorPoint anchorPoint;
-  const AnchorPointScreen({Key? key, required this.anchorPoint})
-    : super(key: key);
+  final DataProvider appData;
+  const AnchorPointScreen({Key? key, required this.appData}) : super(key: key);
 
   @override
   State<AnchorPointScreen> createState() => _AnchorPointScreenState();
@@ -48,6 +49,12 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
   bool _step2present = false;
   bool _step3present = false;
   bool _statusArchived = false;
+
+  bool _progressStep1opened = false;
+
+  bool _progressStep2opened = false;
+
+  bool _progressStep3opened = false;
 
   TextEditingController _titleController = TextEditingController();
   TextEditingController _descriptionController = TextEditingController();
@@ -124,9 +131,10 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
   }
 
   fillInputFields() {
-    _titleController.text = widget.anchorPoint.name!;
-    _descriptionController.text = widget.anchorPoint.description ?? "";
-    _imageUrl = widget.anchorPoint.imageUrl;
+    _titleController.text = widget.appData.currentAnchorPoint!.name!;
+    _descriptionController.text =
+        widget.appData.currentAnchorPoint!.description ?? "";
+    _imageUrl = widget.appData.currentAnchorPoint!.imageUrl;
   }
 
   void turnOnEditMode() {
@@ -142,20 +150,21 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
 
     Map<String, dynamic> updatedAnchorPoint = {};
 
-    if (widget.anchorPoint.name != _titleController.text) {
+    if (widget.appData.currentAnchorPoint!.name != _titleController.text) {
       updatedAnchorPoint['name'] = _titleController.text;
     }
 
-    if (widget.anchorPoint.description != _descriptionController.text) {
+    if (widget.appData.currentAnchorPoint!.description !=
+        _descriptionController.text) {
       updatedAnchorPoint['description'] = _descriptionController.text;
     }
 
-    if (widget.anchorPoint.imageUrl != _imageUrl) {
+    if (widget.appData.currentAnchorPoint!.imageUrl != _imageUrl) {
       updatedAnchorPoint['image_url'] = _imageUrl;
     }
 
     await SupabaseAnchorPointSource().updateAnchorPoint(
-      widget.anchorPoint.id,
+      widget.appData.currentAnchorPoint!.id,
       updatedAnchorPoint,
     );
 
@@ -189,7 +198,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
 
   void stepByStatus() async {
     int iterations = 0;
-    switch (widget.anchorPoint.status) {
+    switch (widget.appData.currentAnchorPoint!.status) {
       case AnchorPointStatus.created:
         iterations = 0;
         _step1present = true;
@@ -234,9 +243,9 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     Widget statusCard(
       double padding,
       Widget content,
+      int step,
       IconData icon, {
       GlobalKey? key,
-     
     }) {
       return Padding(
         key: key,
@@ -245,14 +254,24 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
           spacing: 10,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(icon, size: 10),
-            
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                if (_progressController.currentStep == step)
+                  FaIcon(
+                    FontAwesomeIcons.circle,
+                    color: colorScheme.error,
+                    size: 20,
+                  ),
+                FaIcon(icon, size: 15),
+              ],
+            ),
+
             Card(
-              
               child: Container(
                 width: double.infinity,
                 constraints: BoxConstraints(
-                  maxWidth: 400 - padding,
+                  maxWidth: 330 - padding,
                   minHeight: 60,
                 ),
                 child: content,
@@ -264,34 +283,213 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
     }
 
     Widget draftingSection() {
-      Widget content = Container(
-        
-      );
-      return GestureDetector(
-        onTap: () {
-          widget.anchorPoint.status == AnchorPointStatus.created
-              ? Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        DraftingScreen(anchorPoint: widget.anchorPoint),
+      Widget content = widget.appData.currentAnchorPoint!.segmentPrompts == null
+          ? GestureDetector(
+              onTap: () {
+                widget.appData.currentAnchorPoint!.status ==
+                        AnchorPointStatus.created
+                    ? Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => DraftingScreen(
+                            anchorPoint: widget.appData.currentAnchorPoint!,
+                          ),
+                        ),
+                      )
+                    : null;
+              },
+              child: Center(child: Text(getText("no_segments_yet"))),
+            )
+          : AnimatedCrossFade(
+              duration: Durations.long1,
+              crossFadeState: _progressStep1opened
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              firstChild: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _progressStep1opened = true;
+                  });
+                },
+                child: Center(
+                  child: Card(
+                    margin: EdgeInsets.all(8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: widget
+                          .appData
+                          .currentAnchorPoint!
+                          .segmentPrompts!
+                          .map((segment) {
+                            return WholeSymbol(
+                              symbol: segment.symbol,
+                              size: Size(30, 30),
+                            );
+                          })
+                          .toList(),
+                    ),
                   ),
-                )
-              : null;
-        },
-        child: statusCard(
-          20,
-          content,
-          AnchorPointIcons.anchor_point_step1,
-          key: _draftingSectionKey,
-          
-        ),
+                ),
+              ),
+              secondChild: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _progressStep1opened = false;
+                  });
+                },
+                child: Center(
+                  child: Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: widget
+                            .appData
+                            .currentAnchorPoint!
+                            .segmentPrompts!
+                            .map((segment) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    WholeSymbol(
+                                      symbol: segment.symbol,
+                                      size: Size(36, 36),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if ((segment.name ?? "").isNotEmpty)
+                                            Text(
+                                              segment.name ?? "",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            })
+                            .toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+
+      return statusCard(
+        20,
+        content,
+        0,
+        AnchorPointIcons.anchor_point_step1,
+        key: _draftingSectionKey,
       );
     }
 
     Widget craftingSection() {
+      Widget content = GestureDetector(
+        onTap: () async {
+          widget.appData.currentAnchorPoint!.status == AnchorPointStatus.drafted
+              ? Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => CraftingScreen()),
+                )
+              : null;
+        },
+        child: Center(child: Text(getText("no_segments_yet"))),
+      );
+      // : AnimatedCrossFade(
+      //     duration: Durations.long1,
+      //     crossFadeState: _progressStep1opened
+      //         ? CrossFadeState.showSecond
+      //         : CrossFadeState.showFirst,
+      //     firstChild: GestureDetector(
+      //       onTap: () {
+      //         setState(() {
+      //           _progressStep1opened = true;
+      //         });
+      //       },
+      //       child: Center(
+      //         child: Card(
+      //           margin: EdgeInsets.all(8),
+      //           child: Row(
+      //             mainAxisSize: MainAxisSize.max,
+      //             mainAxisAlignment: MainAxisAlignment.spaceAround,
+      //             children: widget.appData.currentAnchorPoint!.segmentPrompts!.map((
+      //               segment,
+      //             ) {
+      //               return WholeSymbol(
+      //                 symbol: segment.symbol,
+      //                 size: Size(30, 30),
+      //               );
+      //             }).toList(),
+      //           ),
+      //         ),
+      //       ),
+      //     ),
+      //     secondChild: GestureDetector(
+      //       onTap: () {
+      //         setState(() {
+      //           _progressStep1opened = false;
+      //         });
+      //       },
+      //       child: Center(
+      //         child: Card(
+      //           child: Padding(
+      //             padding: EdgeInsets.all(12),
+      //             child: Column(
+      //               crossAxisAlignment: CrossAxisAlignment.stretch,
+      //               children: widget.appData.currentAnchorPoint!.segmentPrompts!.map((
+      //                 segment,
+      //               ) {
+      //                 return Padding(
+      //                   padding: const EdgeInsets.symmetric(vertical: 6),
+      //                   child: Row(
+      //                     crossAxisAlignment: CrossAxisAlignment.start,
+      //                     children: [
+      //                       WholeSymbol(
+      //                         symbol: segment.symbol,
+      //                         size: Size(36, 36),
+      //                       ),
+      //                       SizedBox(width: 12),
+      //                       Expanded(
+      //                         child: Column(
+      //                           crossAxisAlignment:
+      //                               CrossAxisAlignment.start,
+      //                           children: [
+      //                             if ((segment.name ?? "").isNotEmpty)
+      //                               Text(
+      //                                 segment.name ?? "",
+      //                                 style: TextStyle(
+      //                                   fontWeight: FontWeight.bold,
+      //                                 ),
+      //                               ),
+      //                           ],
+      //                         ),
+      //                       ),
+      //                     ],
+      //                   ),
+      //                 );
+      //               }).toList(),
+      //             ),
+      //           ),
+      //         ),
+      //       ),
+      //     ),
+      //   );
       return statusCard(
         40,
-        Text("Crafting"),
+        content,
+        1,
         AnchorPointIcons.anchor_point_step2,
         key: _craftingSectionKey,
       );
@@ -301,6 +499,7 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
       return statusCard(
         60,
         Text("Ready"),
+        2,
         AnchorPointIcons.anchor_point_step3,
         key: _readySectionKey,
       );
@@ -408,7 +607,10 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
                                       });
                                       await SupabaseAnchorPointSource()
                                           .deleteAnchorPoint(
-                                            widget.anchorPoint.id,
+                                            widget
+                                                .appData
+                                                .currentAnchorPoint!
+                                                .id,
                                           );
                                       setState(() {
                                         _loading = false;

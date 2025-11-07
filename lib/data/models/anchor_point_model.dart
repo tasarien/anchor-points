@@ -10,6 +10,10 @@ class AnchorPoint {
   final AnchorPointStatus status;
   final String? imageUrl;
   final List<SegmentPrompt>? segmentPrompts;
+  final List<String>? doulosText;
+  final List<String>? doulosAudio;
+  final List<String>? companionText;
+  final List<String>? companionAudio;
 
   AnchorPoint({
     required this.id,
@@ -19,24 +23,38 @@ class AnchorPoint {
     required this.status,
     this.imageUrl,
     this.segmentPrompts,
+    this.doulosText,
+    this.doulosAudio,
+    this.companionText,
+    this.companionAudio,
   });
 
   factory AnchorPoint.fromJson(Map<String, dynamic> json) {
     return AnchorPoint(
       id: json['id'] as int,
       ownerId: json['owner_id'] as String,
-      name: json['name'] as String,
+      name: json['name'] as String?,
       description: json['description'] as String?,
       status: AnchorPointStatus.values.firstWhere(
         (e) => e.name == (json['status'] as String),
         orElse: () => AnchorPointStatus.created,
       ),
-      imageUrl: json['image_url'],
-      segmentPrompts:
-          (json['segment_prompts'] as List<Map<String, dynamic>>?)
-              ?.map((segment) => SegmentPrompt.fromJson(segment))
-              .toList() ??
-          null,
+      imageUrl: json['image_url'] as String?,
+      segmentPrompts: (json['segment_prompts'] as List<dynamic>?)
+          ?.map((segment) => SegmentPrompt.fromJson(segment))
+          .toList(),
+      doulosText: (json['doulos_text'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      doulosAudio: (json['doulos_audio'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      companionText: (json['companion_text'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      companionAudio: (json['companion_audio'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
   }
 
@@ -48,6 +66,11 @@ class AnchorPoint {
       'description': description,
       'status': status.name,
       'image_url': imageUrl,
+      'segment_prompts': segmentPrompts?.map((s) => s.toJson()).toList(),
+      'doulos_text': doulosText,
+      'doulos_audio': doulosAudio,
+      'companion_text': companionText,
+      'companion_audio': companionAudio,
     };
   }
 

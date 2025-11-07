@@ -9,6 +9,7 @@ class WholeButton extends StatefulWidget {
   final VoidCallback? onPressed;
   final Color? circleColor;
   final bool disabled;
+  final bool static;
   final bool wide;
   final bool suggested;
   final bool badgeVisible;
@@ -29,6 +30,7 @@ class WholeButton extends StatefulWidget {
     this.onPressed,
     this.circleColor,
     this.disabled = false,
+    this.static = false,
     this.wide = false,
     this.suggested = true,
     this.badgeVisible = false,
@@ -185,7 +187,7 @@ class _WholeButtonState extends State<WholeButton>
       mainAxisSize: MainAxisSize.min,
       children: [
         FilledButton(
-          onPressed: _handlePress,
+          onPressed: widget.static ? null : _handlePress,
           style: ButtonStyle(
             foregroundColor: WidgetStateColor.fromMap({
               WidgetState.pressed: theme.colorScheme.onSurface,

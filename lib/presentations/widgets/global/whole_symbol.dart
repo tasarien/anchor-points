@@ -1,16 +1,19 @@
 import 'package:anchor_point_app/presentations/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // Whole Symbol - a widget for displaying single character, especially for emojis
 
 class WholeSymbol extends StatefulWidget {
-  final String symbol;
+  final String? symbol;
   final Size size;
+  final IconData? icon;
 
   const WholeSymbol({
     super.key,
-    required this.symbol,
+    this.symbol,
     this.size = const Size(60, 60),
+    this.icon,
   });
 
   @override
@@ -33,9 +36,11 @@ class _WholeSymbolState extends State<WholeSymbol> {
         shadowColor: WidgetStatePropertyAll(Colors.black),
         elevation: WidgetStatePropertyAll(3),
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
+
         backgroundColor: WidgetStateColor.fromMap({
           WidgetState.any: Theme.of(context).scaffoldBackgroundColor,
         }),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         minimumSize: WidgetStatePropertyAll(widget.size),
         maximumSize: WidgetStatePropertyAll(widget.size),
         shape: WidgetStatePropertyAll(
@@ -51,15 +56,23 @@ class _WholeSymbolState extends State<WholeSymbol> {
         fit: StackFit.loose,
         alignment: Alignment.center,
         children: [
-          Icon(Icons.circle_outlined, size: 35, color: AppColors.darkTeal),
-          Text(
-            widget.symbol,
-            style: TextStyle(
-              fontFamily: "Emoji",
-              color: AppColors.beigeLight,
-              fontSize: 28,
-            ),
+          Icon(
+            Icons.circle_outlined,
+            size: widget.size.height * 0.65,
+            color: AppColors.darkTeal,
           ),
+          widget.symbol != null
+              ? Text(
+                  widget.symbol!,
+                  style: TextStyle(
+                    fontFamily: "Emoji",
+                    color: AppColors.beigeLight,
+                    fontSize: widget.size.height / 2,
+                  ),
+                )
+              : widget.icon != null
+              ? FaIcon(widget.icon, color: colorScheme.onSurface)
+              : SizedBox.shrink(),
         ],
       ),
     );
