@@ -46,7 +46,7 @@ class _WholeSymbolState extends State<WholeSymbol> {
         shape: WidgetStatePropertyAll(
           RoundedSuperellipseBorder(
             side: BorderSide(
-              color: isSelected ? colorScheme.error : colorScheme.secondary,
+              color: isSelected ? colorScheme.error : colorScheme.primary,
             ),
             borderRadius: BorderRadiusGeometry.all(Radius.circular(10)),
           ),
@@ -59,14 +59,14 @@ class _WholeSymbolState extends State<WholeSymbol> {
           Icon(
             Icons.circle_outlined,
             size: widget.size.height * 0.65,
-            color: AppColors.darkTeal,
+            color: colorScheme.primary,
           ),
           widget.symbol != null
               ? Text(
                   widget.symbol!,
                   style: TextStyle(
                     fontFamily: "Emoji",
-                    color: AppColors.beigeLight,
+                    color: colorScheme.onSurface,
                     fontSize: widget.size.height / 2,
                   ),
                 )

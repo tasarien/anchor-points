@@ -27,43 +27,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(getText("settings_screen_title"))),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildSettingsButton(
-                context: context,
-                title: getText("settings_account_tab_title"),
-                subtitle: getText("settings_account_tab_description"),
-                icon: FontAwesomeIcons.user,
-                onTap: () => _navigateToAccountSettings(context),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildSettingsButton(
+                    context: context,
+                    title: getText("settings_account_tab_title"),
+                    subtitle: getText("settings_account_tab_description"),
+                    icon: FontAwesomeIcons.user,
+                    onTap: () => _navigateToAccountSettings(context),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSettingsButton(
+                    context: context,
+                    title: getText("settings_display_tab_title"),
+                    subtitle: getText("settings_display_tab_description"),
+                    icon: FontAwesomeIcons.sliders,
+                    onTap: () => _navigateToDisplaySettings(context),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSettingsButton(
+                    context: context,
+                    title: getText("settings_notifications_tab_title"),
+                    subtitle: getText("settings_notification_tab_description"),
+                    icon: FontAwesomeIcons.bell,
+                    onTap: () => _navigateToNotificationsSettings(context),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSettingsButton(
+                    context: context,
+                    title: getText("settings_companions_tab_title"),
+                    subtitle: getText("settings_companion_tab_description"),
+                    icon: FontAwesomeIcons.person,
+                    onTap: () => _navigateToCompanionsSettings(context),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSettingsButton(
+                    context: context,
+                    title: getText("settings_invitation_tab_title"),
+                    subtitle: getText("settings_invitation_tab_description"),
+                    icon: FontAwesomeIcons.envelope,
+                    onTap: () => _navigateToInvitationsSettings(context),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              _buildSettingsButton(
-                context: context,
-                title: getText("settings_display_tab_title"),
-                subtitle: getText("settings_display_tab_description"),
-                icon: FontAwesomeIcons.sliders,
-                onTap: () => _navigateToDisplaySettings(context),
-              ),
-              const SizedBox(height: 16),
-              _buildSettingsButton(
-                context: context,
-                title: getText("settings_notifications_tab_title"),
-                subtitle: getText("settings_notification_tab_description"),
-                icon: FontAwesomeIcons.bell,
-                onTap: () => _navigateToNotificationsSettings(context),
-              ),
-              const SizedBox(height: 16),
-              _buildSettingsButton(
-                context: context,
-                title: getText("settings_companions_tab_title"),
-                subtitle: getText("settings_companion_tab_description"),
-                icon: FontAwesomeIcons.person,
-                onTap: () => _navigateToCompanionsSettings(context),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -115,6 +127,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => CompanionsSettingsScreen()));
+  }
+
+  void _navigateToInvitationsSettings(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => InvitationsSettingsScreen()));
   }
 }
 
@@ -330,6 +348,47 @@ class CompanionsSettingsScreen extends StatelessWidget {
                         text: getText("settings_companions_actions_tab_title"),
                       ),
                       WholeButton(icon: FontAwesomeIcons.person),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+  class InvitationsSettingsScreen extends StatelessWidget {
+  const InvitationsSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
+    AuthProvider auth = context.watch<AuthProvider>();
+
+    return Scaffold(
+      appBar: AppBar(title: Text(getText("settings_invitations_tab_title"))),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    spacing: 20,
+                    children: [
+                      SectionTab(
+                        text: getText("settings_invitations_actions_tab_title"),
+                      ),
+                      WholeButton(icon: FontAwesomeIcons.envelope),
                     ],
                   ),
                 ),

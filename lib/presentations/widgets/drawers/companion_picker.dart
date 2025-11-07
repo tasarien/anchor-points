@@ -52,11 +52,7 @@ class _PickCompanionBottomSheetState extends State<PickCompanionBottomSheet> {
   }
 
   void _selectCompanion(UserProfile profile) {
-    Navigator.pop(context, {true, profile});
-  }
-
-  void _inviteSomeoneNew() {
-    Navigator.pop(context, {false, null});
+    Navigator.pop(context, profile);
   }
 
   @override
@@ -87,17 +83,6 @@ class _PickCompanionBottomSheetState extends State<PickCompanionBottomSheet> {
             ),
             const SizedBox(height: 16),
 
-            WholeButton(
-              text: "Invite someone new",
-              wide: true,
-              icon: FontAwesomeIcons.envelope,
-              onPressed: () {
-                _inviteSomeoneNew();
-              },
-            ),
-            const SizedBox(height: 12),
-            SectionTab(text: "or"),
-            const SizedBox(height: 12),
             TextField(
               controller: _searchController,
               decoration: InputDecoration(

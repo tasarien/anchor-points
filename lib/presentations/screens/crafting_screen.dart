@@ -1,7 +1,9 @@
 import 'package:action_slider/action_slider.dart';
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/data/models/person_invitation.dart';
 import 'package:anchor_point_app/data/models/user_profile.dart';
-import 'package:anchor_point_app/presentations/widgets/global/companion_picker.dart';
+import 'package:anchor_point_app/presentations/widgets/drawers/companion_picker.dart';
+import 'package:anchor_point_app/presentations/widgets/drawers/invite_person.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -29,6 +31,11 @@ class _CraftingScreenState extends State<CraftingScreen> {
   UserProfile? textCompanion;
   UserProfile? audioCompanion;
 
+  PersonInvitation? textInvitation;
+  PersonInvitation? audioInvitation;
+
+
+
   // Text controllers for messages
   final TextEditingController _textMessageController = TextEditingController();
   final TextEditingController _audioMessageController = TextEditingController();
@@ -51,12 +58,32 @@ class _CraftingScreenState extends State<CraftingScreen> {
     return audioProvider == CompanionType.companion;
   }
 
+  bool _hasTextPickedCompanionOrInvited() {
+    return textCompanion != null || textInvitation != null;
+  }
+
+  bool _hasAudioPickedCompanionOrInvited() {
+    return audioCompanion != null || audioInvitation != null;
+  }
+
+ 
   bool _needsCombinedEditor() {
-    return textProvider == CompanionType.companion &&
-        audioProvider == CompanionType.companion &&
-        textCompanion != null &&
-        audioCompanion != null &&
-        textCompanion!.id == audioCompanion!.id;
+    bool hasSameCompanionPicked() {
+      if (textCompanion != null && audioCompanion != null) {
+        return textCompanion!.id == audioCompanion!.id;
+      }
+      if (textInvitation != null && audioInvitation != null) {
+        return textInvitation!.id! == audioInvitation!.id!;
+      }
+      return false;
+    }
+
+    bool hasTextAndAudioCompanionType() {
+      return textProvider == CompanionType.companion &&
+          audioProvider == CompanionType.companion;
+    }
+
+    return hasTextAndAudioCompanionType() && hasSameCompanionPicked();
   }
 
   bool _hasAnyAIProvider() {
@@ -121,29 +148,64 @@ class _CraftingScreenState extends State<CraftingScreen> {
                   ),
                   SizedBox(height: 10),
                   if (textProvider == CompanionType.companion)
-                    WholeButton(
-                      onPressed: () async {
-                        final UserProfile result = await showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(20),
-                            ),
-                          ),
-                          builder: (_) => PickCompanionBottomSheet(),
-                        );
-                        setState(() {
-                          textCompanion = result;
-                        });
-                      },
-                      wide: true,
-                      icon: textCompanion != null
-                          ? FontAwesomeIcons.person
-                          : FontAwesomeIcons.magnifyingGlass,
-                      text: textCompanion != null
-                          ? textCompanion!.username!
-                          : "Find companion",
+                    Row(
+                      children: [
+                        WholeButton(
+                          onPressed: () async {
+                            final UserProfile? result = await showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20),
+                                ),
+                              ),
+                              builder: (_) => PickCompanionBottomSheet(),
+                            );
+                            setState(() {
+                              if(result != null) {
+                              textCompanion = result;
+                              textInvitation = null;
+                              }
+                            });
+                          },
+                          wide: true,
+                          icon: textCompanion != null
+                              ? FontAwesomeIcons.person
+                              : FontAwesomeIcons.magnifyingGlass,
+                          text: textCompanion != null
+                              ? textCompanion!.username!
+                              : "Find companion",
+                        ),
+                        WholeButton(
+                          onPressed: () async {
+                            final PersonInvitation? result = await showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20),
+                                ),
+                              ),
+                              builder: (_) => InvitePersonBottomSheet(),
+                            );
+                            setState(() {
+                              if(result != null) {
+                              textCompanion = null;
+                              textInvitation = result;
+                              }
+
+                            });
+                          },
+                          wide: true,
+                          icon: textInvitation != null
+                              ? FontAwesomeIcons.envelope
+                              : FontAwesomeIcons.envelopeCircleCheck,
+                          text: textInvitation != null
+                              ? textInvitation!.name!
+                              : "Invite a friend",
+                        ),
+                      ],
                     ),
                   SizedBox(height: 10),
                   // Separate text message editor (when text companion is different or audio is not companion)
@@ -153,8 +215,8 @@ class _CraftingScreenState extends State<CraftingScreen> {
                       title: 'Message for text writing',
                       subtitle: textCompanion != null
                           ? 'Request ${textCompanion!.username} to write the text'
-                          : 'Select a companion first',
-                      icon: FontAwesomeIcons.envelope,
+                          : textInvitation != null ? 'Invite ${textInvitation!.name} to write the text' : 'Select a companion first, or invite someone new',
+                      icon: FontAwesomeIcons.envelopeOpenText,
                       combined: false,
                     ),
                 ],
@@ -197,29 +259,64 @@ class _CraftingScreenState extends State<CraftingScreen> {
                   ),
                   SizedBox(height: 10),
                   if (audioProvider == CompanionType.companion)
-                    WholeButton(
-                      onPressed: () async {
-                        final UserProfile result = await showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(20),
-                            ),
-                          ),
-                          builder: (_) => PickCompanionBottomSheet(),
-                        );
-                        setState(() {
-                          audioCompanion = result;
-                        });
-                      },
-                      wide: true,
-                      icon: audioCompanion != null
-                          ? FontAwesomeIcons.person
-                          : FontAwesomeIcons.magnifyingGlass,
-                      text: audioCompanion != null
-                          ? audioCompanion!.username!
-                          : "Find companion",
+                    Row(
+                      children: [
+                        WholeButton(
+                          onPressed: () async {
+                            final UserProfile? result = await showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20),
+                                ),
+                              ),
+                              builder: (_) => PickCompanionBottomSheet(),
+                            );
+                            setState(() {
+                              if(result != null) {
+                              audioCompanion = result;
+                              audioInvitation = null;
+                              }
+                            });
+                          },
+                          wide: true,
+                          icon: audioCompanion != null
+                              ? FontAwesomeIcons.person
+                              : FontAwesomeIcons.magnifyingGlass,
+                          text: audioCompanion != null
+                              ? audioCompanion!.username!
+                              : "Find companion",
+                        ),
+                        WholeButton(
+                          onPressed: () async {
+                            final PersonInvitation? result = await showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20),
+                                ),
+                              ),
+                              builder: (_) => InvitePersonBottomSheet(),
+                            );
+                            setState(() {
+                              if(result != null) {
+                              audioCompanion = null;
+                              audioInvitation = result;
+                              }
+
+                            });
+                          },
+                          wide: true,
+                          icon: audioInvitation != null
+                              ? FontAwesomeIcons.envelope
+                              : FontAwesomeIcons.envelopeCircleCheck,
+                          text: audioInvitation != null
+                              ? audioInvitation!.name!
+                              : "Invite a friend",
+                        ),
+                      ],
                     ),
                   SizedBox(height: 10),
                   // Separate audio message editor (when audio companion is different or text is not companion)
@@ -229,7 +326,8 @@ class _CraftingScreenState extends State<CraftingScreen> {
                       title: 'Message for audio recording',
                       subtitle: audioCompanion != null
                           ? 'Request ${audioCompanion!.username} to record the audio'
-                          : 'Select a companion first',
+                          : audioInvitation != null ? 'Invite ${audioInvitation!.name} to record the audio'
+                          : 'Select a companion first, or invite someone new',
                       icon: FontAwesomeIcons.envelope,
                       combined: false,
                     ),
@@ -242,9 +340,10 @@ class _CraftingScreenState extends State<CraftingScreen> {
             if (_needsCombinedEditor())
               _MessageEditor(
                 controller: _combinedMessageController,
-                title: 'Message to ${textCompanion!.username}',
+                title: 'Message to ${textCompanion != null ? textCompanion!.username : textInvitation!.name}',
                 subtitle:
-                    'This message will request both text and audio from ${textCompanion!.username}',
+                
+                    'This message will request both text and audio from ${textCompanion != null ? textCompanion!.username : textInvitation!.name}',
                 icon: FontAwesomeIcons.envelope,
                 combined: true,
               ),
