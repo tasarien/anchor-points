@@ -20,8 +20,7 @@ class InvitePersonBottomSheet extends StatefulWidget {
 class _InvitePersonBottomSheetState extends State<InvitePersonBottomSheet> {
   final SupabaseClient supabase = Supabase.instance.client;
   bool _isLoading = false;
-  PersonInvitation? _invitedPerson = PersonInvitation(id: 1, name: "Stefan", token: "2456", status: "status", userInvitingId: "id", expireDate: DateTime(2020, 2,3));
-  
+
   void _selectInvitation(PersonInvitation? invitation) {
     Navigator.pop(context, invitation);
   }
@@ -35,12 +34,7 @@ class _InvitePersonBottomSheetState extends State<InvitePersonBottomSheet> {
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            
-
-           InvitationCreatorWidget()
-            
-          ],
+          children: [InvitationCreatorWidget()],
         ),
       ),
     );

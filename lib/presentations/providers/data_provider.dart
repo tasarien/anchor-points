@@ -46,6 +46,7 @@ class DataProvider extends ChangeNotifier {
 
   loadAllData() async {
     await loadOwnedAnchorPoints();
+    debugPrint(_anchorPoints.length.toString());
     await loadUserInfo();
     pickFirstAnchorPoint();
   }
@@ -79,10 +80,9 @@ class DataProvider extends ChangeNotifier {
     notifyListeners();
 
     var response = await SupabaseAnchorPointSource().getAllAnchorPoints();
-    _anchorPoints = [];
-    response
-        .map((json) => _anchorPoints.add(AnchorPoint.fromJson(json)))
-        .toList();
+    _anchorPoints = await Future.wait(
+      response.map((json) => AnchorPoint.fromJsonAsync(json)),
+    );
     _reloading = false;
     notifyListeners();
   }

@@ -1,12 +1,15 @@
 import 'package:action_slider/action_slider.dart';
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/person_invitation.dart';
 import 'package:anchor_point_app/data/models/user_profile.dart';
+import 'package:anchor_point_app/data/sources/request_source.dart';
 import 'package:anchor_point_app/presentations/widgets/drawers/companion_picker.dart';
 import 'package:anchor_point_app/presentations/widgets/drawers/invite_person.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum CompanionType { you, companion, ai }
 
@@ -18,7 +21,8 @@ class CraftingSelection {
 }
 
 class CraftingScreen extends StatefulWidget {
-  const CraftingScreen({Key? key}) : super(key: key);
+  final AnchorPoint anchorPoint;
+  const CraftingScreen({Key? key, required this.anchorPoint}) : super(key: key);
 
   @override
   State<CraftingScreen> createState() => _CraftingScreenState();
@@ -33,8 +37,6 @@ class _CraftingScreenState extends State<CraftingScreen> {
 
   PersonInvitation? textInvitation;
   PersonInvitation? audioInvitation;
-
-
 
   // Text controllers for messages
   final TextEditingController _textMessageController = TextEditingController();
@@ -66,7 +68,6 @@ class _CraftingScreenState extends State<CraftingScreen> {
     return audioCompanion != null || audioInvitation != null;
   }
 
- 
   bool _needsCombinedEditor() {
     bool hasSameCompanionPicked() {
       if (textCompanion != null && audioCompanion != null) {
@@ -120,6 +121,7 @@ class _CraftingScreenState extends State<CraftingScreen> {
               title: getText('crafting_writing_title'),
               subtitle: getText('crafting_writing_subtitle'),
               child: Column(
+                spacing: 20,
                 children: [
                   _ToggleSelector(
                     options: [
@@ -146,68 +148,69 @@ class _CraftingScreenState extends State<CraftingScreen> {
                       });
                     },
                   ),
-                  SizedBox(height: 10),
                   if (textProvider == CompanionType.companion)
                     Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         WholeButton(
                           onPressed: () async {
-                            final UserProfile? result = await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              builder: (_) => PickCompanionBottomSheet(),
-                            );
+                            final UserProfile? result =
+                                await showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
+                                    ),
+                                  ),
+                                  builder: (_) => PickCompanionBottomSheet(),
+                                );
                             setState(() {
-                              if(result != null) {
-                              textCompanion = result;
-                              textInvitation = null;
+                              if (result != null) {
+                                textCompanion = result;
+                                textInvitation = null;
                               }
                             });
                           },
-                          wide: true,
                           icon: textCompanion != null
                               ? FontAwesomeIcons.person
                               : FontAwesomeIcons.magnifyingGlass,
                           text: textCompanion != null
                               ? textCompanion!.username!
                               : "Find companion",
+                          wide: textCompanion != null,
                         ),
                         WholeButton(
                           onPressed: () async {
-                            final PersonInvitation? result = await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              builder: (_) => InvitePersonBottomSheet(),
-                            );
+                            final PersonInvitation? result =
+                                await showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
+                                    ),
+                                  ),
+                                  builder: (_) => InvitePersonBottomSheet(),
+                                );
                             setState(() {
-                              if(result != null) {
-                              textCompanion = null;
-                              textInvitation = result;
+                              if (result != null) {
+                                textCompanion = null;
+                                textInvitation = result;
                               }
-
                             });
                           },
-                          wide: true,
                           icon: textInvitation != null
                               ? FontAwesomeIcons.envelope
                               : FontAwesomeIcons.envelopeCircleCheck,
                           text: textInvitation != null
                               ? textInvitation!.name!
                               : "Invite a friend",
+                          wide: textInvitation != null,
                         ),
                       ],
                     ),
-                  SizedBox(height: 10),
                   // Separate text message editor (when text companion is different or audio is not companion)
                   if (_needsTextEditor() && !_needsCombinedEditor())
                     _MessageEditor(
@@ -215,7 +218,9 @@ class _CraftingScreenState extends State<CraftingScreen> {
                       title: 'Message for text writing',
                       subtitle: textCompanion != null
                           ? 'Request ${textCompanion!.username} to write the text'
-                          : textInvitation != null ? 'Invite ${textInvitation!.name} to write the text' : 'Select a companion first, or invite someone new',
+                          : textInvitation != null
+                          ? 'Invite ${textInvitation!.name} to write the text'
+                          : 'Select a companion first, or invite someone new',
                       icon: FontAwesomeIcons.envelopeOpenText,
                       combined: false,
                     ),
@@ -231,6 +236,7 @@ class _CraftingScreenState extends State<CraftingScreen> {
               title: getText('crafting_recording_title'),
               subtitle: getText('crafting_recording_subtitle'),
               child: Column(
+                spacing: 20,
                 children: [
                   _ToggleSelector(
                     options: [
@@ -257,68 +263,69 @@ class _CraftingScreenState extends State<CraftingScreen> {
                       });
                     },
                   ),
-                  SizedBox(height: 10),
                   if (audioProvider == CompanionType.companion)
                     Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         WholeButton(
                           onPressed: () async {
-                            final UserProfile? result = await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              builder: (_) => PickCompanionBottomSheet(),
-                            );
+                            final UserProfile? result =
+                                await showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
+                                    ),
+                                  ),
+                                  builder: (_) => PickCompanionBottomSheet(),
+                                );
                             setState(() {
-                              if(result != null) {
-                              audioCompanion = result;
-                              audioInvitation = null;
+                              if (result != null) {
+                                audioCompanion = result;
+                                audioInvitation = null;
                               }
                             });
                           },
-                          wide: true,
                           icon: audioCompanion != null
                               ? FontAwesomeIcons.person
                               : FontAwesomeIcons.magnifyingGlass,
                           text: audioCompanion != null
                               ? audioCompanion!.username!
                               : "Find companion",
+                          wide: audioCompanion != null,
                         ),
                         WholeButton(
                           onPressed: () async {
-                            final PersonInvitation? result = await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              builder: (_) => InvitePersonBottomSheet(),
-                            );
+                            final PersonInvitation? result =
+                                await showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
+                                    ),
+                                  ),
+                                  builder: (_) => InvitePersonBottomSheet(),
+                                );
                             setState(() {
-                              if(result != null) {
-                              audioCompanion = null;
-                              audioInvitation = result;
+                              if (result != null) {
+                                audioCompanion = null;
+                                audioInvitation = result;
                               }
-
                             });
                           },
-                          wide: true,
                           icon: audioInvitation != null
                               ? FontAwesomeIcons.envelope
                               : FontAwesomeIcons.envelopeCircleCheck,
                           text: audioInvitation != null
                               ? audioInvitation!.name!
                               : "Invite a friend",
+                          wide: audioInvitation != null,
                         ),
                       ],
                     ),
-                  SizedBox(height: 10),
                   // Separate audio message editor (when audio companion is different or text is not companion)
                   if (_needsAudioEditor() && !_needsCombinedEditor())
                     _MessageEditor(
@@ -326,7 +333,8 @@ class _CraftingScreenState extends State<CraftingScreen> {
                       title: 'Message for audio recording',
                       subtitle: audioCompanion != null
                           ? 'Request ${audioCompanion!.username} to record the audio'
-                          : audioInvitation != null ? 'Invite ${audioInvitation!.name} to record the audio'
+                          : audioInvitation != null
+                          ? 'Invite ${audioInvitation!.name} to record the audio'
                           : 'Select a companion first, or invite someone new',
                       icon: FontAwesomeIcons.envelope,
                       combined: false,
@@ -340,9 +348,9 @@ class _CraftingScreenState extends State<CraftingScreen> {
             if (_needsCombinedEditor())
               _MessageEditor(
                 controller: _combinedMessageController,
-                title: 'Message to ${textCompanion != null ? textCompanion!.username : textInvitation!.name}',
+                title:
+                    'Message to ${textCompanion != null ? textCompanion!.username : textInvitation!.name}',
                 subtitle:
-                
                     'This message will request both text and audio from ${textCompanion != null ? textCompanion!.username : textInvitation!.name}',
                 icon: FontAwesomeIcons.envelope,
                 combined: true,
@@ -359,10 +367,13 @@ class _CraftingScreenState extends State<CraftingScreen> {
 
             // Summary Card with Continue Button
             _SummaryCard(
+              anchorPoint: widget.anchorPoint,
               textProvider: textProvider,
               audioProvider: audioProvider,
               textCompanion: textCompanion,
               audioCompanion: audioCompanion,
+              textInvitation: textInvitation,
+              audioInvitation: audioInvitation,
               textMessageController: _textMessageController,
               audioMessageController: _audioMessageController,
               combinedMessageController: _combinedMessageController,
@@ -782,8 +793,11 @@ class _ToggleSelector extends StatelessWidget {
 }
 
 class _SummaryCard extends StatelessWidget {
+  final AnchorPoint anchorPoint;
   final CompanionType textProvider;
   final CompanionType audioProvider;
+  final PersonInvitation? textInvitation;
+  final PersonInvitation? audioInvitation;
   final VoidCallback onContinue;
   final UserProfile? textCompanion;
   final UserProfile? audioCompanion;
@@ -792,9 +806,12 @@ class _SummaryCard extends StatelessWidget {
   final TextEditingController combinedMessageController;
 
   const _SummaryCard({
+    required this.anchorPoint,
     required this.textProvider,
     required this.audioProvider,
     required this.onContinue,
+    this.audioInvitation,
+    this.textInvitation,
     this.textCompanion,
     this.audioCompanion,
     required this.textMessageController,
@@ -883,19 +900,43 @@ class _SummaryCard extends StatelessWidget {
   }
 
   bool _isSameCompanion() {
-    return textProvider == CompanionType.companion &&
-        audioProvider == CompanionType.companion &&
-        textCompanion != null &&
-        audioCompanion != null &&
-        textCompanion!.id == audioCompanion!.id;
+    return (textProvider == CompanionType.companion &&
+            audioProvider == CompanionType.companion) &&
+        (((textCompanion != null && audioCompanion != null) &&
+                (textCompanion!.id == audioCompanion!.id)) ||
+            (textInvitation != null && audioInvitation != null) &&
+                textInvitation!.id == audioInvitation!.id);
   }
 
   Future<void> sendRequest() async {
-    // Add your API call here with the message controllers
-    // You can access:
-    // - combinedMessageController.text (when same companion for both)
-    // - textMessageController.text (for text companion message)
-    // - audioMessageController.text (for audio companion message)
+    final Map<String, dynamic> requestText = {
+      "requester_id": Supabase.instance.client.auth.currentUser!.id,
+      "requested_for": textProvider.name,
+      "status": "pending",
+      "companion_id": textCompanion?.id,
+      "invitation_code": textInvitation?.token,
+    };
+    final Map<String, dynamic> requestAudio = {
+      "requester_id": Supabase.instance.client.auth.currentUser!.id,
+      "requested_for": audioProvider.name,
+      "status": "pending",
+      "companion_id": audioCompanion?.id,
+      "invitation_code": audioInvitation?.token,
+    };
+    try {
+      SupabaseRequestSource().createRequest(
+        requestBody: requestText,
+        type: 'text',
+        anchorPointId: anchorPoint.id,
+      );
+      SupabaseRequestSource().createRequest(
+        requestBody: requestAudio,
+        type: 'audio',
+        anchorPointId: anchorPoint.id,
+      );
+    } catch (error) {
+      print(error.toString());
+    }
   }
 
   void _checkRequestValidity(
@@ -904,8 +945,16 @@ class _SummaryCard extends StatelessWidget {
   ) async {
     final getText = (String key) => AppLocalizations.of(context).translate(key);
 
+    bool textInputNotPicked() {
+      return textCompanion == null && textInvitation == null;
+    }
+
+    bool audioInputNotPicked() {
+      return audioCompanion == null && audioInvitation == null;
+    }
+
     // Check for missing text companion
-    if (textProvider == CompanionType.companion && textCompanion == null) {
+    if (textProvider == CompanionType.companion && textInputNotPicked()) {
       controller.failure();
       await Future.delayed(Durations.long4);
       controller.reset();
@@ -919,7 +968,7 @@ class _SummaryCard extends StatelessWidget {
     }
 
     // Check for missing audio companion
-    if (audioProvider == CompanionType.companion && audioCompanion == null) {
+    if (audioProvider == CompanionType.companion && audioInputNotPicked()) {
       controller.failure();
       await Future.delayed(Durations.long4);
       controller.reset();

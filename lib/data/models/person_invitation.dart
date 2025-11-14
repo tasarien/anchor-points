@@ -1,18 +1,20 @@
 class PersonInvitation {
   final int? id;
   final String? name;
+  final String? message;
   final String? token;
   final String status;
   final DateTime expireDate;
-  final String userInvitingId;
+  final String invitatorId;
 
   PersonInvitation({
     required this.id,
     required this.name,
+    this.message,
     required this.token,
     required this.status,
     required this.expireDate,
-    required this.userInvitingId,
+    required this.invitatorId,
   });
 
   factory PersonInvitation.fromJson(Map<String, dynamic> json) {
@@ -32,8 +34,7 @@ class PersonInvitation {
       throw FormatException('Invalid or missing expireDate');
     }
 
-    final userInvitingId =
-        (json['userInvitingId'] ?? json['user_inviting_id']) as String?;
+    final userInvitingId = json['invitator_id'] as String?;
     if (userInvitingId == null) {
       throw FormatException('Missing userInvitingId');
     }
@@ -41,10 +42,11 @@ class PersonInvitation {
     return PersonInvitation(
       id: json['id'] as int?,
       name: json['name'] as String?,
+      message: json['message'] as String?,
       token: json['token'] as String?,
       status: json['status'] as String,
       expireDate: parsedExpireDate,
-      userInvitingId: userInvitingId,
+      invitatorId: userInvitingId,
     );
   }
 
@@ -52,10 +54,11 @@ class PersonInvitation {
     return {
       'id': id,
       'name': name,
+      'message': message,
       'token': token,
       'status': status,
       'expireDate': expireDate.toIso8601String(),
-      'userInvitingId': userInvitingId,
+      'invitator_id': invitatorId,
     };
   }
 }

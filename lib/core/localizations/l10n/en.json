@@ -59,7 +59,7 @@
   "symbol": "Symbol",
   "use_templates" : "Use templates",
   "or" : "or",
-  "no_segments_yet" : "There is no segments yet.",
+  "create_requests" : "There is nothing requested yet.",
   "you_can_use_template" : "You can use one of prepared templates:",
   "add_first_segment" : "Start from scratch by adding first segment:",
   "use_only_seven_segments" : "You can use only first seven segments. You can rearange segments and decide wich the best suits your Anchor Point.",
@@ -96,8 +96,11 @@
   "crafting_summary_balanced": "Balanced approach combining different contributors",
   
   "crafting_continue_button": "Continue",
-  "make_request" : "Make request"
+  "make_request" : "Make request",
+  "audio_request" : "audio",
+  "text_request" : "text",
   
+  "listen_anchor_point" : "Listen this anchor point"
  
 
 }

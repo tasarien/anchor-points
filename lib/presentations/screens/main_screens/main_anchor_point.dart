@@ -3,7 +3,7 @@ import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/screens/create_anchor_point_screen.dart';
-import 'package:anchor_point_app/presentations/screens/main_screens/anchor_point_screen.dart';
+import 'package:anchor_point_app/presentations/screens/main_screens/anchor_point_screen/anchor_point_screen.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';

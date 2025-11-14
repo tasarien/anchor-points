@@ -1,7 +1,7 @@
 import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
-import 'package:anchor_point_app/presentations/screens/main_screens/anchor_point_screen.dart';
+import 'package:anchor_point_app/presentations/screens/main_screens/anchor_point_screen/anchor_point_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/main_anchor_point.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/notifications_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/other_AP_screens.dart';
