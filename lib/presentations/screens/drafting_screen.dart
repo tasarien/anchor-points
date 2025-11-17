@@ -2,6 +2,7 @@ import 'package:action_slider/action_slider.dart';
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
+import 'package:anchor_point_app/data/models/segment_data.dart';
 import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
 import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
@@ -41,7 +42,7 @@ class _DraftingScreenState extends State<DraftingScreen> {
 
   void _addSegment({int? index}) {
     setState(() {
-      final newSegment = SegmentPrompt(name: "", prompt: "", symbol: "✨");
+      final newSegment = SegmentPrompt(segmentData: SegmentData(name: "", symbol: "✨"), prompt: "", );
       if (index != null && index >= 0 && index < _segmentPrompts.length) {
         _segmentPrompts.insert(index + 1, newSegment);
       } else {
@@ -89,13 +90,13 @@ class _DraftingScreenState extends State<DraftingScreen> {
       final seg = _segmentPrompts[index];
       switch (field) {
         case 'name':
-          seg.name = value;
+          seg.segmentData.name = value;
           break;
         case 'prompt':
           seg.prompt = value;
           break;
         case 'symbol':
-          seg.symbol = value;
+          seg.segmentData.symbol = value;
           break;
       }
     });
@@ -126,8 +127,8 @@ class _DraftingScreenState extends State<DraftingScreen> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     bool excluded = index > 6;
     final segment = _segmentPrompts[index];
-    final nameController = TextEditingController(text: segment.name);
-    final symbolController = TextEditingController(text: segment.symbol);
+    final nameController = TextEditingController(text: segment.segmentData.name);
+    final symbolController = TextEditingController(text: segment.segmentData.symbol);
     final promptController = TextEditingController(text: segment.prompt);
 
     nameController.selection = TextSelection.collapsed(

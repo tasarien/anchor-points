@@ -41,11 +41,11 @@ class ApDraftingSection extends StatelessWidget {
                   (segment) => Row(
                     children: [
                       WholeSymbol(
-                        symbol: segment.symbol,
+                        symbol: segment.segmentData.symbol,
                         size: const Size(36, 36),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(child: Text(segment.name ?? '')),
+                      Expanded(child: Text(segment.segmentData.name ?? '')),
                     ],
                   ),
                 )

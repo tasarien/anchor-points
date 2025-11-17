@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 class RequestModel {
   final String requesterId;
   final String type; // 'text' or 'audio'
-  final String requestedFor; // 'you', 'companion', or 'ai'
+  final SourceType requestedFor; // 'you', 'companion', or 'ai'
   final String status; // 'pending', 'completed', 'declined'
   final String? companionId;
   final String? invitationCode;
@@ -32,7 +32,7 @@ class RequestModel {
     return RequestModel(
       requesterId: json['requester_id'] as String,
       type: json['type'] as String,
-      requestedFor: json['requested_for'] as String,
+      requestedFor: SourceType.values.byName(json['requested_for'] as String),
       status: json['status'] as String,
       companionId: json['companion_id'] as String?,
       invitationCode: json['invitation_code'] as String?,
@@ -50,7 +50,7 @@ class RequestModel {
     return {
       'requester_id': requesterId,
       'type': type,
-      'requested_for': requestedFor,
+      'requested_for': requestedFor.name,
       'status': status,
       'companion_id': companionId,
       'invitation_code': invitationCode,
@@ -61,3 +61,5 @@ class RequestModel {
     };
   }
 }
+
+enum SourceType {you, ai, companion}

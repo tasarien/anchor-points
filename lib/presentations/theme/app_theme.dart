@@ -25,7 +25,7 @@ class AppTheme {
       brightness: Brightness.light,
       primary: AppColors.sageGreen,
       onPrimary: AppColors.veryDarkTeal,
-      secondary: AppColors.sageGreen,
+      secondary: AppColors.sageGreenLight,
       onSecondary: Colors.white,
       error: Colors.redAccent,
       onError: Colors.white,

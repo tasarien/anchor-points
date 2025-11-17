@@ -8,12 +8,14 @@ class WholeSymbol extends StatefulWidget {
   final String? symbol;
   final Size size;
   final IconData? icon;
+  final bool selected;
 
   const WholeSymbol({
     super.key,
     this.symbol,
     this.size = const Size(60, 60),
     this.icon,
+    this.selected = true
   });
 
   @override
@@ -59,19 +61,19 @@ class _WholeSymbolState extends State<WholeSymbol> {
           Icon(
             Icons.circle_outlined,
             size: widget.size.height * 0.65,
-            color: colorScheme.primary,
+            color: widget.selected ? colorScheme.secondary : colorScheme.primary,
           ),
           widget.symbol != null
               ? Text(
                   widget.symbol!,
                   style: TextStyle(
                     fontFamily: "Emoji",
-                    color: colorScheme.onSurface,
+                    color: widget.selected ? colorScheme.onSurface : colorScheme.secondary,
                     fontSize: widget.size.height / 2,
                   ),
                 )
               : widget.icon != null
-              ? FaIcon(widget.icon, color: colorScheme.onSurface)
+              ? FaIcon(widget.icon, color: widget.selected ? colorScheme.onSurface : colorScheme.primary,)
               : SizedBox.shrink(),
         ],
       ),

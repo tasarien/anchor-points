@@ -35,7 +35,7 @@ class AnchorPointScreen extends StatelessWidget {
                           if (controller.statusArchived)
                             const ApArchivedSection(),
                           if (controller.step3Present)
-                            ApReadySection(controller: controller),
+                            ApReadySection(anchorPoint: appData.currentAnchorPoint!, controller: controller),
                           if (controller.step2Present)
                             ApCraftingSection(controller: controller),
                           if (controller.step1Present)

@@ -62,6 +62,7 @@ class DataProvider extends ChangeNotifier {
     var response = await SupabaseUserInfoSource().getUserInfo();
 
     _userInfo = UserProfile.fromJson(response);
+    
 
     _reloading = false;
     notifyListeners();
@@ -81,8 +82,10 @@ class DataProvider extends ChangeNotifier {
 
     var response = await SupabaseAnchorPointSource().getAllAnchorPoints();
     _anchorPoints = await Future.wait(
+      
       response.map((json) => AnchorPoint.fromJsonAsync(json)),
     );
+    debugPrint('_anchorPoints: $_anchorPoints');
     _reloading = false;
     notifyListeners();
   }

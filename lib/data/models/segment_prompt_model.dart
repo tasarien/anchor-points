@@ -1,23 +1,22 @@
+import 'package:anchor_point_app/data/models/segment_data.dart';
+
 class SegmentPrompt {
-  String name;
+  SegmentData segmentData;
   String prompt;
-  String symbol;
 
   SegmentPrompt({
-    required this.name,
+    required this.segmentData,
     required this.prompt,
-    required this.symbol,
   });
 
   factory SegmentPrompt.fromJson(Map<String, dynamic> json) {
     return SegmentPrompt(
-      name: json['name'],
+      segmentData: SegmentData.fromJson(json),
       prompt: json['prompt'],
-      symbol: json['symbol'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'prompt': prompt, 'symbol': symbol};
+    return {'segmentData': segmentData, 'prompt': prompt, };
   }
 }

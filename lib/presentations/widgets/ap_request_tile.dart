@@ -65,8 +65,7 @@ class RequestListTile extends StatelessWidget {
       }
       return 'Companion';
     }
-    return request.requestedFor[0].toUpperCase() +
-        request.requestedFor.substring(1);
+    return request.requestedFor.name;
   }
 
   @override

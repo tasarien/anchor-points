@@ -46,7 +46,7 @@ class _SegmentPromptsTemplateScreenState
 
   bool _isSegmentSelected(SegmentPrompt segment) {
     return _selectedPrompts.any(
-      (s) => s.name == segment.name && s.prompt == segment.prompt,
+      (s) => s.segmentData.name == segment.segmentData.name && s.prompt == segment.prompt,
     );
   }
 
@@ -54,7 +54,7 @@ class _SegmentPromptsTemplateScreenState
     setState(() {
       if (_isSegmentSelected(segment)) {
         _selectedPrompts.removeWhere(
-          (s) => s.name == segment.name && s.prompt == segment.prompt,
+          (s) => s.segmentData.name == segment.segmentData.name && s.prompt == segment.prompt,
         );
       } else {
         _selectedPrompts.add(segment);
@@ -71,7 +71,7 @@ class _SegmentPromptsTemplateScreenState
       if (_isTemplateSelected(template)) {
         _selectedPrompts.removeWhere(
           (s) => template.template.any(
-            (seg) => seg.name == s.name && seg.prompt == s.prompt,
+            (seg) => seg.segmentData.name == s.segmentData.name && seg.prompt == s.prompt,
           ),
         );
       } else {
@@ -163,7 +163,7 @@ class _SegmentPromptsTemplateScreenState
                     children: template.template
                         .map(
                           (seg) => WholeSymbol(
-                            symbol: seg.symbol,
+                            symbol: seg.segmentData.symbol,
                             size: Size(35, 35),
                           ),
                         )
@@ -176,13 +176,13 @@ class _SegmentPromptsTemplateScreenState
                         value: isSelected,
                         onChanged: (_) => _toggleSegment(segment),
                       ),
-                      title: Text(segment.name),
+                      title: Text(segment.segmentData.name),
                       subtitle: Text(
                         segment.prompt,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      trailing: WholeSymbol(symbol: segment.symbol),
+                      trailing: WholeSymbol(symbol: segment.segmentData.symbol),
                     );
                   }).toList(),
                 ),
