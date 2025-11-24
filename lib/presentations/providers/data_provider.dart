@@ -11,12 +11,14 @@ class DataProvider extends ChangeNotifier {
   UserProfile? _userInfo;
   AnchorPoint? _currentAnchorPoint;
   PersistentTabController _controller = PersistentTabController();
+  bool _tabVisible = true;
 
   List<AnchorPoint> get getAnchorPoints => _anchorPoints;
   bool get isReloading => _reloading;
   UserProfile? get userInfo => _userInfo;
   AnchorPoint? get currentAnchorPoint => _currentAnchorPoint;
   PersistentTabController get tabController => _controller;
+  bool get tabVisible => _tabVisible;
 
   pickFirstAnchorPoint() {
     if (_anchorPoints.isEmpty) {
@@ -62,7 +64,6 @@ class DataProvider extends ChangeNotifier {
     var response = await SupabaseUserInfoSource().getUserInfo();
 
     _userInfo = UserProfile.fromJson(response);
-    
 
     _reloading = false;
     notifyListeners();
@@ -82,11 +83,15 @@ class DataProvider extends ChangeNotifier {
 
     var response = await SupabaseAnchorPointSource().getAllAnchorPoints();
     _anchorPoints = await Future.wait(
-      
       response.map((json) => AnchorPoint.fromJsonAsync(json)),
     );
     debugPrint('_anchorPoints: $_anchorPoints');
     _reloading = false;
+    notifyListeners();
+  }
+
+  void changeTabVisibility(bool newState) {
+    _tabVisible = newState;
     notifyListeners();
   }
 }

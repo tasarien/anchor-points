@@ -31,6 +31,7 @@ class _MainScreenState extends State<MainScreen> {
           : PersistentTabView(
               context,
               controller: appData.tabController,
+              isVisible: appData.tabVisible,
               screens: [
                 MainAnchorPointScreen(),
                 OtherAPScreen(),
@@ -96,7 +97,6 @@ class _MainScreenState extends State<MainScreen> {
               padding: const EdgeInsets.only(top: 8),
               backgroundColor: colorScheme.surface,
 
-              isVisible: true,
               animationSettings: const NavBarAnimationSettings(
                 navBarItemAnimation: ItemAnimationSettings(
                   // Navigation Bar's items animation properties.
