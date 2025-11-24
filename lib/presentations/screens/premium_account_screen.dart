@@ -37,7 +37,7 @@ class _PremiumAccountScreenState extends State<PremiumAccountScreen> {
       // Initialize payment sheet
       await Stripe.Stripe.instance.initPaymentSheet(
         paymentSheetParameters: Stripe.SetupPaymentSheetParameters(
-          paymentIntentClientSecret: paymentIntentData['sk_test_51SWy6zD2OgSF8fvh0xVXiVun3RHybErHhLMOBAc7XSAF9E0j882yHPkRYByQxNnVlNfh1FMLzfb7fGlaH7fQYrZd00n2RyWVcH'],
+          paymentIntentClientSecret: paymentIntentData['secret'],
           merchantDisplayName: 'Anchor Points',
           style: ThemeMode.system,
         ),
