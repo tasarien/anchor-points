@@ -34,13 +34,7 @@ class _PremiumAccountScreenState extends State<PremiumAccountScreen> {
       // Call your backend to create a payment intent
       final paymentIntentData = await _createPaymentIntent();
       
-      // Initialize payment sheet
-      await Stripe.Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: Stripe.SetupPaymentSheetParameters(
-          merchantDisplayName: 'Anchor Points',
-          style: ThemeMode.system,
-        ),
-      );
+     
 
       // Present payment sheet
       await Stripe.Stripe.instance.presentPaymentSheet();
