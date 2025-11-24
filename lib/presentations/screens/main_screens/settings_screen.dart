@@ -1,6 +1,8 @@
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/presentations/providers/auth_provider.dart';
+import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/providers/settings_provider.dart';
+import 'package:anchor_point_app/presentations/screens/premium_account_screen.dart';
 import 'package:anchor_point_app/presentations/widgets/global/section_tab.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:flutter/material.dart';
@@ -147,6 +149,7 @@ class AccountSettingsScreen extends StatelessWidget {
     }
 
     AuthProvider auth = context.watch<AuthProvider>();
+    DataProvider appData = context.watch<DataProvider>();
 
     return Scaffold(
       appBar: AppBar(title: Text(getText("settings_account_tab_title"))),
@@ -170,6 +173,27 @@ class AccountSettingsScreen extends StatelessWidget {
                         wide: true,
                         text: getText("settings_logout_button"),
                         icon: FontAwesomeIcons.arrowRightFromBracket,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    spacing: 20,
+                    children: [
+                      SectionTab(
+                        text: getText("settings_account_premium_tab_title"),
+                      ),
+                      WholeButton(
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => PremiumAccountScreen(appData: appData)));
+                        },
+                        wide: true,
+                        text: getText("settings_premium_button"),
+                        icon: FontAwesomeIcons.arrowUpFromGroundWater,
                       ),
                     ],
                   ),

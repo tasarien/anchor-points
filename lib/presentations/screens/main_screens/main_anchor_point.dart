@@ -3,8 +3,11 @@ import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/screens/create_anchor_point_screen.dart';
+import 'package:anchor_point_app/presentations/screens/demo_anchor_point_screen.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/anchor_point_screen/anchor_point_screen.dart';
+import 'package:anchor_point_app/presentations/screens/premium_account_screen.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
+import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -68,15 +71,38 @@ class _MainAnchorPointScreenState extends State<MainAnchorPointScreen> {
     );
   }
 
+  Widget goToPremiumSelector() {
+    DataProvider appData = context.watch<DataProvider>();
+    
+    return WholeButton(
+      text: getText('change_for_premium'),
+      icon: FontAwesomeIcons.arrowUpFromGroundWater,
+      wide: true,
+      onPressed: () {
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => PremiumAccountScreen(appData: appData,)));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appData = context.watch<DataProvider>();
 
     return Scaffold(
       body: Center(
-        child: appData.currentAnchorPoint != null
-            ? AnchorPointScreen(appData: appData)
-            : createFirstAPButton(),
+        child: 
+        appData.userInfo!.extendedAccount ?
+        // Below full options for extended account
+        appData.currentAnchorPoint != null
+          ? AnchorPointScreen(appData: appData)
+          : createFirstAPButton()
+          // Below options for base account
+          : Column(
+            children: [
+              DemoAnchorPointScreen(appData: appData),
+              goToPremiumSelector()
+            ],
+          )
       ),
     );
   }

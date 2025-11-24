@@ -36,6 +36,7 @@ dependencies:
   audioplayers: ^6.5.1
   dio: ^5.9.0
   flutter_easyloading: ^3.0.5
+  flutter_stripe: ^12.1.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
