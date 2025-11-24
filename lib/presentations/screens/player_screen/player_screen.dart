@@ -1,17 +1,25 @@
+import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
+import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/final_ap_segment.dart';
+import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:anchor_point_app/presentations/widgets/utilities/show_intro_circles.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 
 class PlayerScreen extends StatefulWidget {
+  final AnchorPoint anchorPoint;
   final List<FinalAPSegment> segments;
+  final DataProvider appData;
 
   const PlayerScreen({
     Key? key,
+    required this.anchorPoint,
     required this.segments,
+    required this.appData,
   }) : super(key: key);
 
   @override
@@ -39,11 +47,12 @@ class _PlayerScreenState extends State<PlayerScreen>
     _setupAudioPlayer();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.appData.changeTabVisibility(false);
       showIntroCircles(context);
     });
   }
 
-  // AUDIO SETUP -------------------------------------------------------
+  // Audio setup
 
   void _setupAudioPlayer() {
     _audioPlayer.onPlayerStateChanged.listen((state) {
@@ -74,9 +83,7 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   Future<void> playAudioFor(int index) async {
     await _audioPlayer.stop();
-    await _audioPlayer.play(
-      UrlSource(widget.segments[index].audioUrl),
-    );
+    await _audioPlayer.play(UrlSource(widget.segments[index].audioUrl));
   }
 
   Future<void> togglePlayPause() async {
@@ -117,168 +124,174 @@ class _PlayerScreenState extends State<PlayerScreen>
   void dispose() {
     _audioPlayer.dispose();
     _pageController.dispose();
+    widget.appData.changeTabVisibility(true);
     super.dispose();
   }
-
-  // -------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Listen Anchor Point")),
+      appBar: AppBar(
+        title: Row(
+          spacing: 10,
+          children: [
+            SizedBox(width: 20),
+            FaIcon(AnchorPointIcons.anchor_point_icon),
+            Text(widget.anchorPoint.name!),
+          ],
+        ),
+      ),
       body: Column(
         spacing: 10,
         children: [
-         
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: widget.segments.length,
+              onPageChanged: (index) {
+                _currentSegmentIndex = index;
+                playAudioFor(index);
+              },
+              itemBuilder: (context, index) {
+                final seg = widget.segments[index];
 
-         Expanded(
-  child: PageView.builder(
-    controller: _pageController,
-    itemCount: widget.segments.length,
-    onPageChanged: (index) {
-      _currentSegmentIndex = index;
-      playAudioFor(index);
-    },
-    itemBuilder: (context, index) {
-      final seg = widget.segments[index];
-
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            spacing: 10,
-            children: [
-              // text
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10)
-                   , border: Border.all(color: colorScheme.primary) )
-                  ,
-                  padding: const EdgeInsets.all(10),
-                  clipBehavior: Clip.hardEdge,
-                  child: SingleChildScrollView(
-                    child: Text(
-                      seg.text,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ),
-        
-        
-              // Slider
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 14),
-                child: Column(
-                  children: [
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 3,
-                      ),
-                      child: Slider(
-                        value: _currentPosition.inSeconds.toDouble(),
-                        max: _totalDuration.inSeconds.toDouble() > 0
-                            ? _totalDuration.inSeconds.toDouble()
-                            : 1.0,
-                        onChanged: (value) {
-                          seekTo(Duration(seconds: value.toInt()));
-                        },
-                      ),
-                    ),
-              
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      spacing: 10,
                       children: [
-                        Text(
-                          formatDuration(_currentPosition),
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.6),
+                        // text
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: colorScheme.primary),
+                            ),
+                            padding: const EdgeInsets.all(10),
+                            clipBehavior: Clip.hardEdge,
+                            child: SingleChildScrollView(
+                              child: Text(
+                                seg.text,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                           ),
                         ),
-                        Text(
-                          formatDuration(_totalDuration),
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.6),
+
+                        // Slider
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                          child: Column(
+                            children: [
+                              SliderTheme(
+                                data: SliderTheme.of(
+                                  context,
+                                ).copyWith(trackHeight: 3),
+                                child: Slider(
+                                  value: _currentPosition.inSeconds.toDouble(),
+                                  max: _totalDuration.inSeconds.toDouble() > 0
+                                      ? _totalDuration.inSeconds.toDouble()
+                                      : 1.0,
+                                  onChanged: (value) {
+                                    seekTo(Duration(seconds: value.toInt()));
+                                  },
+                                ),
+                              ),
+
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    formatDuration(_currentPosition),
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.6),
+                                    ),
+                                  ),
+                                  Text(
+                                    formatDuration(_totalDuration),
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-      );
-    },
-  ),
-),
           // Segment Selector
-            Padding(
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Card(
               child: SizedBox(
-              width: double.infinity,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                controller: ScrollController(),
-                child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  spacing: 5,
-                  children: List.generate(widget.segments.length, (i) {
-                  final seg = widget.segments[i].segmentData;
-                      
-                  return GestureDetector(
-                    onTap: () => goToSegment(i),
-                    child: Column(
-                    children: [
-                      WholeSymbol(
-                      symbol: seg.symbol,
-                      selected: _currentSegmentIndex == i,
-                      ),
-                      const SizedBox(height: 4),
-                      SizedBox(
-                        width: 70,
-                        child: Text(
-                          
-                          seg.name,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                          fontWeight: _currentSegmentIndex == i
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                width: double.infinity,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  controller: ScrollController(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      spacing: 5,
+                      children: List.generate(widget.segments.length, (i) {
+                        final seg = widget.segments[i].segmentData;
+
+                        return GestureDetector(
+                          onTap: () => goToSegment(i),
+                          child: Column(
+                            children: [
+                              WholeSymbol(
+                                symbol: seg.symbol,
+                                selected: _currentSegmentIndex == i,
+                              ),
+                              const SizedBox(height: 4),
+                              SizedBox(
+                                width: 70,
+                                child: Text(
+                                  seg.name,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontWeight: _currentSegmentIndex == i
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ),
-                    ],
+                        );
+                      }),
                     ),
-                  );
-                  }),
+                  ),
                 ),
-                ),
-              ),
               ),
             ),
-            )
-              ,
+          ),
           // Controls
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -294,14 +307,13 @@ class _PlayerScreenState extends State<PlayerScreen>
                           : null,
                       icon: FontAwesomeIcons.leftLong,
                     ),
-                    const SizedBox(width: 20),
                     WholeButton(
                       onPressed: togglePlayPause,
                       icon: _isPlaying ? Icons.pause : Icons.play_arrow,
                     ),
-                    const SizedBox(width: 20),
                     WholeButton(
-                      onPressed: _currentSegmentIndex < widget.segments.length - 1
+                      onPressed:
+                          _currentSegmentIndex < widget.segments.length - 1
                           ? () => goToSegment(_currentSegmentIndex + 1)
                           : null,
                       icon: FontAwesomeIcons.rightLong,
@@ -311,8 +323,6 @@ class _PlayerScreenState extends State<PlayerScreen>
               ),
             ),
           ),
-
-          const SizedBox(height: 30),
         ],
       ),
     );
