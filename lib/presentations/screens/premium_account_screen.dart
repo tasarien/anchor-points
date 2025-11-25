@@ -2,6 +2,7 @@ import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_stripe/flutter_stripe.dart' as Stripe;
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -171,8 +172,8 @@ class _PremiumAccountScreenState extends State<PremiumAccountScreen> {
    
 
     try {
+
       var response = await Supabase.instance.client.from('testingUsers').select().eq('token', code).single();
-      debugPrint("o");
       
       bool isValid() {
         if(response.isEmpty) {
@@ -215,6 +216,7 @@ class _PremiumAccountScreenState extends State<PremiumAccountScreen> {
       setState(() {
         _errorMessage = 'Error verifying code: ${e.toString()}';
       });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_errorMessage!)));
     } finally {
       setState(() {
         _isLoading = false;
@@ -225,8 +227,8 @@ class _PremiumAccountScreenState extends State<PremiumAccountScreen> {
   @override
   Widget build(BuildContext context) {
     
-    final hasPremium = widget.appData.userInfo!.premiumAccount; // appData.userProfile.premiumAccount
-    final hasSuperAccess = widget.appData.userInfo!.superAccess; // appData.userProfile.superAccess
+    final hasPremium = widget.appData.userInfo!.premiumAccount; 
+    final hasSuperAccess = widget.appData.userInfo!.superAccess; 
 
     return Scaffold(
       appBar: AppBar(
@@ -243,8 +245,7 @@ class _PremiumAccountScreenState extends State<PremiumAccountScreen> {
                   // Premium Account Section
                   _buildSectionCard(
                     title: 'Premium Account',
-                    icon: Icons.star,
-                    iconColor: Colors.amber,
+                    icon: FontAwesomeIcons.arrowUpFromGroundWater,
                     child: hasPremium
                         ? _buildPremiumActiveContent()
                         : _buildPremiumInactiveContent(),
@@ -255,8 +256,7 @@ class _PremiumAccountScreenState extends State<PremiumAccountScreen> {
                   // Super Access Section
                   _buildSectionCard(
                     title: 'Super Access',
-                    icon: Icons.security,
-                    iconColor: Colors.purple,
+                    icon: FontAwesomeIcons.arrowUp,
                     child: hasSuperAccess
                         ? _buildSuperAccessActiveContent()
                         : _buildSuperAccessInactiveContent(),
@@ -270,26 +270,23 @@ class _PremiumAccountScreenState extends State<PremiumAccountScreen> {
   Widget _buildSectionCard({
     required String title,
     required IconData icon,
-    required Color iconColor,
     required Widget child,
   }) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, color: iconColor, size: 28),
+                Icon(icon, size: 28),
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(context).textTheme.titleMedium
+                 
                 ),
               ],
             ),
