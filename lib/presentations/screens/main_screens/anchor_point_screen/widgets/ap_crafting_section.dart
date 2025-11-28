@@ -32,8 +32,8 @@ class ApCraftingSection extends StatelessWidget {
           child: hasRequests
               ? Column(
                   children: [
-                    RequestListTile(request: ap.textRequest!),
-                    RequestListTile(request: ap.audioRequest!),
+                    RequestListTile(request: ap.textRequest!, anchorPoint: ap,),
+                    RequestListTile(request: ap.audioRequest!, anchorPoint: ap,),
                   ],
                 )
               : GestureDetector(

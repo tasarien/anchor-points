@@ -29,20 +29,7 @@ class ApReadySection extends StatelessWidget {
 
     final DataProvider appData = context.watch<DataProvider>();
 
-    List<FinalAPSegment> buildSegments() {
-      List<FinalAPSegment> segments = [];
-      for (int index = 0; index < anchorPoint.segmentPrompts!.length; index++) {
-        SegmentPrompt segment = anchorPoint.segmentPrompts![index];
-        segments.add(
-          FinalAPSegment(
-            segmentData: segment.segmentData,
-            text: anchorPoint.doulosText![index],
-            audioUrl: anchorPoint.doulosAudio![index],
-          ),
-        );
-      }
-      return segments;
-    }
+  
 
     ColorScheme colorScheme = Theme.of(context).colorScheme;
 
@@ -68,7 +55,6 @@ class ApReadySection extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) => PlayerScreen(
                           anchorPoint: anchorPoint,
-                          segments: buildSegments(),
                           appData: appData,
                         ),
                       ),

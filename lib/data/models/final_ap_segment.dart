@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 
 class FinalAPSegment {
   final SegmentData segmentData;
-  final String text;
-  final String audioUrl;
+  final String? text;
+  final String? audioUrl;
 
   FinalAPSegment({
     required this.segmentData,
-    required this.text,
-    required this.audioUrl,
+    this.text,
+    this.audioUrl,
 
   });
 

@@ -12,13 +12,11 @@ import 'package:provider/provider.dart';
 
 class PlayerScreen extends StatefulWidget {
   final AnchorPoint anchorPoint;
-  final List<FinalAPSegment> segments;
   final DataProvider appData;
 
   const PlayerScreen({
     Key? key,
     required this.anchorPoint,
-    required this.segments,
     required this.appData,
   }) : super(key: key);
 
@@ -70,7 +68,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     });
 
     _audioPlayer.onPlayerComplete.listen((_) {
-      if (_currentSegmentIndex < widget.segments.length - 1) {
+      if (_currentSegmentIndex < widget.anchorPoint.finalSegments!.length - 1) {
         goToSegment(_currentSegmentIndex + 1);
       } else {
         setState(() {
@@ -83,7 +81,7 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   Future<void> playAudioFor(int index) async {
     await _audioPlayer.stop();
-    await _audioPlayer.play(UrlSource(widget.segments[index].audioUrl));
+    await _audioPlayer.play(UrlSource(widget.anchorPoint.finalSegments![index].audioUrl!));
   }
 
   Future<void> togglePlayPause() async {
@@ -95,7 +93,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   Future<void> goToSegment(int index) async {
-    if (index < 0 || index >= widget.segments.length) return;
+    if (index < 0 || index >= widget.anchorPoint.finalSegments!.length) return;
 
     setState(() {
       _currentSegmentIndex = index;
@@ -149,13 +147,13 @@ class _PlayerScreenState extends State<PlayerScreen>
           Expanded(
             child: PageView.builder(
               controller: _pageController,
-              itemCount: widget.segments.length,
+              itemCount: widget.anchorPoint.finalSegments!.length,
               onPageChanged: (index) {
                 _currentSegmentIndex = index;
                 playAudioFor(index);
               },
               itemBuilder: (context, index) {
-                final seg = widget.segments[index];
+                final seg = widget.anchorPoint.finalSegments![index];
 
                 return Card(
                   child: Padding(
@@ -175,7 +173,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                             clipBehavior: Clip.hardEdge,
                             child: SingleChildScrollView(
                               child: Text(
-                                seg.text,
+                                seg.text!,
                                 style: TextStyle(
                                   fontSize: 18,
                                   color: Theme.of(
@@ -258,8 +256,8 @@ class _PlayerScreenState extends State<PlayerScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       spacing: 5,
-                      children: List.generate(widget.segments.length, (i) {
-                        final seg = widget.segments[i].segmentData;
+                      children: List.generate(widget.anchorPoint.finalSegments!.length, (i) {
+                        final seg = widget.anchorPoint.finalSegments![i].segmentData;
 
                         return GestureDetector(
                           onTap: () => goToSegment(i),
@@ -313,7 +311,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ),
                     WholeButton(
                       onPressed:
-                          _currentSegmentIndex < widget.segments.length - 1
+                          _currentSegmentIndex < widget.anchorPoint.finalSegments!.length - 1
                           ? () => goToSegment(_currentSegmentIndex + 1)
                           : null,
                       icon: FontAwesomeIcons.rightLong,

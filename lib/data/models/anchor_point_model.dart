@@ -1,3 +1,4 @@
+import 'package:anchor_point_app/data/models/final_ap_segment.dart';
 import 'package:anchor_point_app/data/models/request_model.dart';
 import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
 import 'package:anchor_point_app/data/sources/request_source.dart';
@@ -13,10 +14,7 @@ class AnchorPoint {
   final AnchorPointStatus status;
   final String? imageUrl;
   final List<SegmentPrompt>? segmentPrompts;
-  final List<String>? doulosText;
-  final List<String>? doulosAudio;
-  final List<String>? companionText;
-  final List<String>? companionAudio;
+  final List<FinalAPSegment>? finalSegments;
   final RequestModel? audioRequest;
   final RequestModel? textRequest;
 
@@ -28,10 +26,7 @@ class AnchorPoint {
     required this.status,
     this.imageUrl,
     this.segmentPrompts,
-    this.doulosText,
-    this.doulosAudio,
-    this.companionText,
-    this.companionAudio,
+    this.finalSegments,
     this.audioRequest,
     this.textRequest,
   });
@@ -51,6 +46,25 @@ class AnchorPoint {
           )
         : null;
 
+         List<SegmentPrompt>? segmentPrompts = (json['segment_prompts'] as List<dynamic>?)
+          ?.map((segment) => SegmentPrompt.fromJson(segment))
+          .toList();
+    
+   
+    List<FinalAPSegment>? makeFinalSegments() {
+      debugPrint('1');
+       List<FinalAPSegment> finalSegments = [];
+      if(segmentPrompts != null) {
+        int index = 0;
+      for(SegmentPrompt segmentPrompt in segmentPrompts) {
+        
+        finalSegments.add(FinalAPSegment(
+          segmentData: segmentPrompt.segmentData, text: json['segments_text'][index] ?? [], audioUrl: json['segments_audio'][index] ?? []));
+      }
+      }
+      return finalSegments;
+    }
+
     return AnchorPoint(
       id: json['id'] as int,
       ownerId: json['owner_id'] as String,
@@ -61,75 +75,16 @@ class AnchorPoint {
         orElse: () => AnchorPointStatus.created,
       ),
       imageUrl: json['image_url'] as String?,
-      segmentPrompts: (json['segment_prompts'] as List<dynamic>?)
-          ?.map((segment) => SegmentPrompt.fromJson(segment))
-          .toList(),
-      doulosText: (json['doulos_text'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      doulosAudio: (json['doulos_audio'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      companionText: (json['companion_text'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      companionAudio: (json['companion_audio'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
+      segmentPrompts: segmentPrompts,
+      finalSegments: makeFinalSegments(),
+     
+      
       textRequest: textRequest,
       audioRequest: audioRequest,
     );
   }
 
-  factory AnchorPoint.fromJson(Map<String, dynamic> json) {
-    final requestSource = SupabaseRequestSource();
-
-    Future<Map<String, dynamic>?> textRequest() async {
-      if (json['text_request_id'] != null) {
-        return await requestSource.getRequest(json['text_request_id']);
-      } else {
-        return null;
-      }
-    }
-
-    Future<Map<String, dynamic>?> audioRequest() async {
-      if (json['audio_request_id'] != null) {
-        return await requestSource.getRequest(json['audio_request_id']);
-      } else {
-        return null;
-      }
-    }
-
-    return AnchorPoint(
-      id: json['id'] as int,
-      ownerId: json['owner_id'] as String,
-      name: json['name'] as String?,
-      description: json['description'] as String?,
-      status: AnchorPointStatus.values.firstWhere(
-        (e) => e.name == (json['status'] as String),
-        orElse: () => AnchorPointStatus.created,
-      ),
-      imageUrl: json['image_url'] as String?,
-      segmentPrompts: (json['segment_prompts'] as List<dynamic>?)
-          ?.map((segment) => SegmentPrompt.fromJson(segment))
-          .toList(),
-      doulosText: (json['doulos_text'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      doulosAudio: (json['doulos_audio'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      companionText: (json['companion_text'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      companionAudio: (json['companion_audio'] as List<dynamic>?)
-          ?.map((e) => e as String)
-          .toList(),
-      textRequest: json['text_request'],
-      audioRequest: json['audio_request'],
-    );
-  }
-
+ 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -139,10 +94,6 @@ class AnchorPoint {
       'status': status.name,
       'image_url': imageUrl,
       'segment_prompts': segmentPrompts?.map((s) => s.toJson()).toList(),
-      'doulos_text': doulosText,
-      'doulos_audio': doulosAudio,
-      'companion_text': companionText,
-      'companion_audio': companionAudio,
     };
   }
 

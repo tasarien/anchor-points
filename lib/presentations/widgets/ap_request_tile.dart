@@ -1,23 +1,44 @@
+
+
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/request_model.dart';
+import 'package:anchor_point_app/presentations/screens/recorder_screen.dart';
+import 'package:anchor_point_app/presentations/screens/writing_screen.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
 
 class RequestListTile extends StatelessWidget {
   final RequestModel request;
-  final String? companionUsername; // Optional: fetch from companion_id
-  final String? inviteeName; // Optional: fetch from invitation_code
+  final AnchorPoint anchorPoint;
+  final String? companionUsername;
+  final String? inviteeName; 
   final VoidCallback? onTap;
 
   const RequestListTile({
     Key? key,
     required this.request,
+    required this.anchorPoint,
     this.companionUsername,
     this.inviteeName,
     this.onTap,
   }) : super(key: key);
+
+  void handleTap(BuildContext context) {
+    switch (request.requestedFor) {
+      case 'you':
+        request.type == 'text' ? 
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => WritingScreen(segments: anchorPoint.segmentPrompts!)))
+        :
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => AudioRecorderScreen(segments: anchorPoint.finalSegments!)));
+        
+      
+        break;
+      default:
+        break;
+    }
+  }
 
   IconData _getTypeIcon() {
     return request.type == 'text'
@@ -166,7 +187,7 @@ class RequestListTile extends StatelessWidget {
           size: 16,
           color: colorScheme.onSurface.withOpacity(0.4),
         ),
-        onTap: onTap,
+        onTap: () => handleTap(context),
       ),
     );
   }
