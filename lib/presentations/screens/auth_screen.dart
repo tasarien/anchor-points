@@ -276,19 +276,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
                     child: Text(getText('auth_forgot_password')),
                   ),
-                Divider(indent: 20, endIndent: 20),
-                SizedBox(height: 20),
-                Text(getText('auth_sign_in_with')),
-                SizedBox(height: 20),
-                WholeButton(
-                  text: "google",
-                  icon: FontAwesomeIcons.google,
-                  wide: true,
-                  suggested: false,
-                  onPressed: () async {
-                    await authProvider.googleSignIn(context);
-                  },
-                ),
+               
               ],
             ),
           ),
