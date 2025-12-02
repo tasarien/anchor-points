@@ -100,7 +100,90 @@
   "audio_request" : "audio",
   "text_request" : "text",
   
-  "listen_anchor_point" : "Listen this anchor point"
- 
+  "listen_anchor_point" : "Listen this anchor point",
+"create_request" : "Create request",
+"archived" : "Archived",
+"no_description" : "No description provided",
+"no_segments_yet" : "No segments yet",
 
+  "save": "Save",
+  "edit": "Edit",
+
+  "delete_anchor_point_question": "Delete anchor point?",
+  "notifications" : "Notifications",
+  "no_notifications_yet" : "No notifications yet",
+  "settings_notifications_tab_title": "Notifications",
+  "settings_notification_tab_description": "Manage alerts and sounds",
+  "settings_companions_tab_title": "Companions",
+  "settings_companion_tab_description": "Manage your companions",
+  "settings_invitation_tab_title": "Invitations",
+  "settings_invitation_tab_description": "View and manage invitations",
+  "settings_account_premium_tab_title": "Premium",
+  "settings_premium_button": "Upgrade to Premium",
+  "settings_notifications_actions_tab_title": "Notification Settings",
+  "settings_companion_tab_title": "Companions",
+  "settings_companions_actions_tab_title": "Companion Actions",
+  "settings_invitations_tab_title": "Invitations",
+  "settings_invitations_actions_tab_title": "Invitation Actions",
+  "demo_anchor_point" : "Demo Anchor Point",
+  "crafting_sheet_title": "Crafting Sheet",
+  "crafting_sheet_subtitle": "Configure how your anchor point is created",
+  "crafting_writing_title": "Writing",
+  "crafting_writing_subtitle": "Who will write the text?",
+  "crafting_option_ai": "AI",
+  "crafting_option_you": "You",
+  "crafting_option_companion": "Companion",
+  "crafting_option_ai_voice": "AI Voice",
+  
+  "find_companion_button": "Find companion",
+  "invite_friend_button": "Invite a friend",
+  
+  "message_editor_text_title": "Message for text writing",
+  "request_user_write_text": "Request {name} to write the text",
+  "invite_user_write_text": "Invite {name} to write the text",
+  "select_companion_warning": "Select a companion first, or invite someone new",
+  
+
+  
+  "message_editor_audio_title": "Message for audio recording",
+  "request_user_record_audio": "Request {name} to record the audio",
+  "invite_user_record_audio": "Invite {name} to record the audio",
+  
+  "message_to_user": "Message to {name}",
+  "request_both_text_audio": "This message will request both text and audio from {name}",
+  
+  "enter_message_hint": "Enter your message...",
+  
+  "ai_configuration_title": "AI Configuration",
+  "ai_configuration_subtitle": "AI will generate content automatically",
+  "ai_text_generation_label": "AI Text Generation",
+  "ai_text_generation_desc": "Text will be generated automatically",
+  "ai_voice_synthesis_label": "AI Voice Synthesis",
+  "ai_voice_synthesis_desc": "Audio will be synthesized automatically",
+  
+  "continue_button": "Continue",
+  "summary_title": "Summary",
+  "name" : "Name",
+  "finish_setup" : "Finish setup",
+  
+  "appBarTitle": "Write Segments",
+  "submitTooltip": "Submit All",
+  "snackbarUploadSuccess": "All writings uploaded successfully!",
+  "errorUploadFailed": "Failed to upload writings: {error}",
+  "dialogClearTitle": "Clear Text",
+  "dialogClearContent": "Are you sure you want to clear all text for this segment?",
+  "dialogClearActionCancel": "Cancel",
+  "dialogClearActionClear": "Clear",
+  "segmentWordCount": "{count} words",
+  "segmentWordsNeeded": " ({needed} more needed)",
+  "promptCardTitle": "Writing Prompt",
+  "textFieldTitle": "Your Writing",
+  "textFieldClearButton": "Clear",
+  "textFieldHint": "Start writing here...",
+  "progressMinRequired": "Minimum {minWordCount} words required",
+  "progressComplete": "Complete! Great work!"
+  
+ 
 }
+
+

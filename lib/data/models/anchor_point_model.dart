@@ -46,7 +46,7 @@ class AnchorPoint {
           )
         : null;
 
-         List<SegmentPrompt>? segmentPrompts = (json['segment_prompts'] as List<dynamic>?)
+    List<SegmentPrompt>? segmentPrompts = (json['segment_prompts'] as List<dynamic>?)
           ?.map((segment) => SegmentPrompt.fromJson(segment))
           .toList();
     
@@ -62,6 +62,7 @@ class AnchorPoint {
           segmentData: segmentPrompt.segmentData, text: json['segments_text'][index] ?? [], audioUrl: json['segments_audio'][index] ?? []));
       }
       }
+      debugPrint(finalSegments.toString());
       return finalSegments;
     }
 
@@ -77,8 +78,6 @@ class AnchorPoint {
       imageUrl: json['image_url'] as String?,
       segmentPrompts: segmentPrompts,
       finalSegments: makeFinalSegments(),
-     
-      
       textRequest: textRequest,
       audioRequest: audioRequest,
     );
