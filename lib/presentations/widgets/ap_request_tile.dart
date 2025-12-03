@@ -1,11 +1,10 @@
-
-
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/request_model.dart';
 import 'package:anchor_point_app/presentations/screens/recorder_screen.dart';
 import 'package:anchor_point_app/presentations/screens/writing_screen.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -13,7 +12,7 @@ class RequestListTile extends StatelessWidget {
   final RequestModel request;
   final AnchorPoint anchorPoint;
   final String? companionUsername;
-  final String? inviteeName; 
+  final String? inviteeName;
   final VoidCallback? onTap;
 
   const RequestListTile({
@@ -27,13 +26,21 @@ class RequestListTile extends StatelessWidget {
 
   void handleTap(BuildContext context) {
     switch (request.requestedFor) {
-      case 'you':
-        request.type == 'text' ? 
-        Navigator.of(context).push(MaterialPageRoute(builder: (context) => WritingScreen(segments: anchorPoint.segmentPrompts!)))
-        :
-        Navigator.of(context).push(MaterialPageRoute(builder: (context) => AudioRecorderScreen(segments: anchorPoint.finalSegments!)));
-        
-      
+      case SourceType.you:
+        request.type == 'text'
+            ? Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      WritingScreen(segments: anchorPoint.segmentPrompts!),
+                ),
+              )
+            : Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      AudioRecorderScreen(segments: anchorPoint.finalSegments!),
+                ),
+              );
+
         break;
       default:
         break;

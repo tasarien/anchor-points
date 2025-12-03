@@ -7,6 +7,7 @@ class SupabaseAnchorPointSource {
     final response = await supabase
         .from('anchorPoints')
         .select()
+        .eq('owner_id', supabase.auth.currentUser!.id)
         .order('created_at', ascending: true);
 
     return response;

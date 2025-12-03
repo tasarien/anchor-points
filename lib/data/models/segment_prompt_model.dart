@@ -4,19 +4,16 @@ class SegmentPrompt {
   SegmentData segmentData;
   String prompt;
 
-  SegmentPrompt({
-    required this.segmentData,
-    required this.prompt,
-  });
+  SegmentPrompt({required this.segmentData, required this.prompt});
 
   factory SegmentPrompt.fromJson(Map<String, dynamic> json) {
-    return SegmentPrompt(
-      segmentData: SegmentData.fromJson(json),
-      prompt: json['prompt'],
-    );
+    SegmentData segmentData = json['segmentData'] != null
+        ? SegmentData.fromJson(json['segmentData'])
+        : SegmentData(name: json['name'], symbol: json['symbol']);
+    return SegmentPrompt(segmentData: segmentData, prompt: json['prompt']);
   }
 
   Map<String, dynamic> toJson() {
-    return {'segmentData': segmentData, 'prompt': prompt, };
+    return {'segmentData': segmentData, 'prompt': prompt};
   }
 }

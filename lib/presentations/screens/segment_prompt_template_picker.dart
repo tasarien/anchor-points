@@ -37,6 +37,7 @@ class _SegmentPromptsTemplateScreenState
         .select()
         .eq('locale', widget.localeCode);
     final data = response as List<dynamic>;
+
     return data
         .map(
           (e) => SegmentPromptsTemplate.fromJson(Map<String, dynamic>.from(e)),
@@ -46,7 +47,9 @@ class _SegmentPromptsTemplateScreenState
 
   bool _isSegmentSelected(SegmentPrompt segment) {
     return _selectedPrompts.any(
-      (s) => s.segmentData.name == segment.segmentData.name && s.prompt == segment.prompt,
+      (s) =>
+          s.segmentData.name == segment.segmentData.name &&
+          s.prompt == segment.prompt,
     );
   }
 
@@ -54,7 +57,9 @@ class _SegmentPromptsTemplateScreenState
     setState(() {
       if (_isSegmentSelected(segment)) {
         _selectedPrompts.removeWhere(
-          (s) => s.segmentData.name == segment.segmentData.name && s.prompt == segment.prompt,
+          (s) =>
+              s.segmentData.name == segment.segmentData.name &&
+              s.prompt == segment.prompt,
         );
       } else {
         _selectedPrompts.add(segment);
@@ -71,7 +76,9 @@ class _SegmentPromptsTemplateScreenState
       if (_isTemplateSelected(template)) {
         _selectedPrompts.removeWhere(
           (s) => template.template.any(
-            (seg) => seg.segmentData.name == s.segmentData.name && seg.prompt == s.prompt,
+            (seg) =>
+                seg.segmentData.name == s.segmentData.name &&
+                seg.prompt == s.prompt,
           ),
         );
       } else {

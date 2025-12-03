@@ -1,9 +1,9 @@
 import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
 import 'package:anchor_point_app/data/models/writing_state.dart';
+import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
+import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-
 
 class WritingScreen extends StatefulWidget {
   final List<SegmentPrompt> segments;
@@ -23,14 +23,14 @@ class WritingScreen extends StatefulWidget {
 
 class _WritingScreenState extends State<WritingScreen> {
   late PageController _pageController;
-  
+
   int _currentPage = 0;
   bool _isSubmitting = false;
-  
+
   Map<int, WritingState> _writingStates = {};
   Map<int, TextEditingController> _textControllers = {};
   Map<int, FocusNode> _focusNodes = {};
-  
+
   @override
   void initState() {
     super.initState();
@@ -43,7 +43,7 @@ class _WritingScreenState extends State<WritingScreen> {
       _writingStates[i] = WritingState();
       _textControllers[i] = TextEditingController();
       _focusNodes[i] = FocusNode();
-      
+
       _textControllers[i]!.addListener(() {
         _updateWritingState(i);
       });
@@ -53,8 +53,9 @@ class _WritingScreenState extends State<WritingScreen> {
   void _updateWritingState(int index) {
     final text = _textControllers[index]!.text;
     final wordCount = _countWords(text);
-    final isComplete = wordCount >= widget.minWordCount && text.trim().isNotEmpty;
-    
+    final isComplete =
+        wordCount >= widget.minWordCount && text.trim().isNotEmpty;
+
     setState(() {
       _writingStates[index] = WritingState(
         text: text,
@@ -96,19 +97,21 @@ class _WritingScreenState extends State<WritingScreen> {
 
     try {
       final supabase = Supabase.instance.client;
-      
+
       // TODO upload to supabase as text
 
       await Future.delayed(Durations.medium1);
-      
-      
+
       if (mounted) {
         Navigator.of(context).pop({
           'completed': true,
           'segments': widget.segments.length,
-          'totalWords': _writingStates.values.fold(0, (sum, state) => sum + state.wordCount),
+          'totalWords': _writingStates.values.fold(
+            0,
+            (sum, state) => sum + state.wordCount,
+          ),
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('All writings uploaded successfully!')),
         );
@@ -125,7 +128,9 @@ class _WritingScreenState extends State<WritingScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear Text'),
-        content: const Text('Are you sure you want to clear all text for this segment?'),
+        content: const Text(
+          'Are you sure you want to clear all text for this segment?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -151,6 +156,7 @@ class _WritingScreenState extends State<WritingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Write Segments'),
@@ -161,7 +167,10 @@ class _WritingScreenState extends State<WritingScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 '${_getCompletedCount()}/${widget.segments.length}',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -171,7 +180,7 @@ class _WritingScreenState extends State<WritingScreen> {
                 ? const Center(
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
-                      child: CircularProgressIndicator(color: Colors.white),
+                      child: LoadingIndicator(),
                     ),
                   )
                 : IconButton(
@@ -197,16 +206,16 @@ class _WritingScreenState extends State<WritingScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _writingStates[index]?.isComplete == true
-                        ? Colors.green
+                        ? colorScheme.secondary
                         : index == _currentPage
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey.shade300,
+                        ? colorScheme.onSurface
+                        : colorScheme.primary,
                   ),
                 ),
               ),
             ),
           ),
-          
+
           // PageView
           Expanded(
             child: PageView.builder(
@@ -243,17 +252,7 @@ class _WritingScreenState extends State<WritingScreen> {
           // Segment info header
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  segment.segmentData.symbol,
-                  style: const TextStyle(fontSize: 32),
-                ),
-              ),
+              WholeSymbol(symbol: segment.segmentData.symbol, selected: false),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -295,44 +294,41 @@ class _WritingScreenState extends State<WritingScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Prompt card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade200),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.lightbulb_outline, color: Colors.blue.shade700, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Writing Prompt',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade700,
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.lightbulb_outline,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  segment.prompt,
-                  style: const TextStyle(fontSize: 16, height: 1.5),
-                ),
-              ],
+                      const SizedBox(width: 8),
+                      Text(
+                        'Writing Instructions for this ',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(segment.prompt),
+                ],
+              ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Text editor
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,9 +347,7 @@ class _WritingScreenState extends State<WritingScreen> {
                       onPressed: _clearCurrentText,
                       icon: const Icon(Icons.clear, size: 18),
                       label: const Text('Clear'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                      ),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
                     ),
                 ],
               ),
@@ -388,9 +382,14 @@ class _WritingScreenState extends State<WritingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     LinearProgressIndicator(
-                      value: (state.wordCount / widget.minWordCount).clamp(0.0, 1.0),
+                      value: (state.wordCount / widget.minWordCount).clamp(
+                        0.0,
+                        1.0,
+                      ),
                       backgroundColor: Colors.grey.shade200,
-                      color: isComplete ? Colors.green : Theme.of(context).primaryColor,
+                      color: isComplete
+                          ? Colors.green
+                          : Theme.of(context).primaryColor,
                       minHeight: 6,
                       borderRadius: BorderRadius.circular(3),
                     ),

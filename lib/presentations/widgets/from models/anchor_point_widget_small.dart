@@ -1,3 +1,4 @@
+import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/screens/main_screens/anchor_point_screen/anchor_point_screen.dart';
@@ -22,6 +23,26 @@ class _AnchorPointWidgetSmallState extends State<AnchorPointWidgetSmall> {
     DataProvider appData = context.watch<DataProvider>();
     bool pinned =
         widget.anchorPoint.id == appData.userInfo!.pinnedAnchorPointId;
+
+    statusIcons() {
+      List<FaIcon> icons = [];
+      if (widget.anchorPoint.status == AnchorPointStatus.created) {
+        icons = [FaIcon(AnchorPointIcons.anchor_point_step1)];
+      } else if (widget.anchorPoint.status == AnchorPointStatus.drafted) {
+        icons = [
+          FaIcon(AnchorPointIcons.anchor_point_step1),
+          FaIcon(AnchorPointIcons.anchor_point_step2),
+        ];
+      } else if (widget.anchorPoint.status == AnchorPointStatus.crafted) {
+        icons = [
+          FaIcon(AnchorPointIcons.anchor_point_step1),
+          FaIcon(AnchorPointIcons.anchor_point_step2),
+          FaIcon(AnchorPointIcons.anchor_point_step3),
+        ];
+      }
+      return icons;
+    }
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 10),
       child: Stack(
@@ -33,6 +54,7 @@ class _AnchorPointWidgetSmallState extends State<AnchorPointWidgetSmall> {
               child: ListTile(
                 leading: SizedBox(width: 100, height: 100),
                 title: Text(widget.anchorPoint.name!),
+
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -57,21 +79,45 @@ class _AnchorPointWidgetSmallState extends State<AnchorPointWidgetSmall> {
               ),
             ),
           ),
-          Container(
-            width: 100,
+          SizedBox(
             height: 100,
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: colorScheme.tertiary,
-                width: 2,
-                strokeAlign: BorderSide.strokeAlignOutside,
-              ),
+            width: 100,
+            child: Stack(
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  clipBehavior: Clip.hardEdge,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colorScheme.tertiary,
+                      width: 2,
+                      strokeAlign: BorderSide.strokeAlignOutside,
+                    ),
+                  ),
+                  child: widget.anchorPoint.imageUrl != null
+                      ? Image.network(
+                          widget.anchorPoint.imageUrl!,
+                          fit: BoxFit.fill,
+                        )
+                      : Image.asset('assets/images/empty_landscape.png'),
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colorScheme.surface,
+                      border: Border.all(color: colorScheme.primary),
+                    ),
+                    child: Center(child: Stack(children: statusIcons())),
+                  ),
+                ),
+              ],
             ),
-            child: widget.anchorPoint.imageUrl != null
-                ? Image.network(widget.anchorPoint.imageUrl!, fit: BoxFit.fill)
-                : Image.asset('assets/images/empty_landscape.png'),
           ),
         ],
       ),

@@ -34,33 +34,41 @@ class AnchorPoint {
   static Future<AnchorPoint> fromJsonAsync(Map<String, dynamic> json) async {
     final requestSource = SupabaseRequestSource();
 
-    final textRequest = json['text_request_id'] != null
+    final RequestModel? textRequest = json['text_request_id'] != null
         ? RequestModel.fromJson(
             await requestSource.getRequest(json['text_request_id']),
           )
         : null;
 
-    final audioRequest = json['audio_request_id'] != null
+    final RequestModel? audioRequest = json['audio_request_id'] != null
         ? RequestModel.fromJson(
             await requestSource.getRequest(json['audio_request_id']),
           )
         : null;
 
-         List<SegmentPrompt>? segmentPrompts = (json['segment_prompts'] as List<dynamic>?)
-          ?.map((segment) => SegmentPrompt.fromJson(segment))
-          .toList();
-    
-   
+    List<SegmentPrompt>? segmentPrompts =
+        (json['segment_prompts'] as List<dynamic>?)
+            ?.map((segment) => SegmentPrompt.fromJson(segment))
+            .toList();
+
     List<FinalAPSegment>? makeFinalSegments() {
       debugPrint('1');
-       List<FinalAPSegment> finalSegments = [];
-      if(segmentPrompts != null) {
+      List<FinalAPSegment> finalSegments = [];
+      if (segmentPrompts != null) {
         int index = 0;
-      for(SegmentPrompt segmentPrompt in segmentPrompts) {
-        
-        finalSegments.add(FinalAPSegment(
-          segmentData: segmentPrompt.segmentData, text: json['segments_text'][index] ?? [], audioUrl: json['segments_audio'][index] ?? []));
-      }
+        for (SegmentPrompt segmentPrompt in segmentPrompts) {
+          finalSegments.add(
+            FinalAPSegment(
+              segmentData: segmentPrompt.segmentData,
+              text: json['segments_text'] != null
+                  ? json['segments_text'][index]
+                  : null,
+              audioUrl: json['segments_audio'] != null
+                  ? json['segments_text'][index]
+                  : null,
+            ),
+          );
+        }
       }
       return finalSegments;
     }
@@ -77,14 +85,11 @@ class AnchorPoint {
       imageUrl: json['image_url'] as String?,
       segmentPrompts: segmentPrompts,
       finalSegments: makeFinalSegments(),
-     
-      
       textRequest: textRequest,
       audioRequest: audioRequest,
     );
   }
 
- 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
