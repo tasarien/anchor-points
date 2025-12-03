@@ -1,3 +1,4 @@
+import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/data/models/user_profile.dart';
 import 'package:anchor_point_app/presentations/providers/auth_provider.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
@@ -77,6 +78,9 @@ class _SetUpScreenState extends State<SetUpScreen> {
   @override
   Widget build(BuildContext context) {
     AuthProvider auth = context.watch<AuthProvider>();
+    String getText(String text) {
+      return AppLocalizations.of(context).translate(text);
+    }
     DataProvider appData = Provider.of<DataProvider>(context, listen: false);
     return Scaffold(
       appBar: AppBar(
@@ -101,7 +105,7 @@ class _SetUpScreenState extends State<SetUpScreen> {
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'Name',
+                labelText: getText('name'),
                 errorText: _errorText,
                 border: const OutlineInputBorder(),
               ),
@@ -111,7 +115,7 @@ class _SetUpScreenState extends State<SetUpScreen> {
               onPressed: () => _submit(appData),
               child: loading
                   ? CircularProgressIndicator()
-                  : Text('Finish Setup'),
+                  : Text(getText('finish_setup')),
             ),
           ],
         ),

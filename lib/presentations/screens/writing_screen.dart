@@ -31,6 +31,48 @@ class _WritingScreenState extends State<WritingScreen> {
   Map<int, TextEditingController> _textControllers = {};
   Map<int, FocusNode> _focusNodes = {};
 
+  // Simple placeholder for localization logic
+  String _getText(String key, {Map<String, dynamic>? args}) {
+    // In a real app, you would look up the key in a map based on the current locale
+    // and replace any placeholders with values from 'args'.
+    switch (key) {
+      case 'appBarTitle':
+        return 'Write Segments';
+      case 'submitTooltip':
+        return 'Submit All';
+      case 'snackbarUploadSuccess':
+        return 'All writings uploaded successfully!';
+      case 'errorUploadFailed':
+        return 'Failed to upload writings: ${args?['error']}';
+      case 'dialogClearTitle':
+        return 'Clear Text';
+      case 'dialogClearContent':
+        return 'Are you sure you want to clear all text for this segment?';
+      case 'dialogClearActionCancel':
+        return 'Cancel';
+      case 'dialogClearActionClear':
+        return 'Clear';
+      case 'segmentWordCount':
+        return '${args?['count']} words';
+      case 'segmentWordsNeeded':
+        return ' (${args?['needed']} more needed)';
+      case 'promptCardTitle':
+        return 'Writing Prompt';
+      case 'textFieldTitle':
+        return 'Your Writing';
+      case 'textFieldClearButton':
+        return 'Clear';
+      case 'textFieldHint':
+        return 'Start writing here...';
+      case 'progressMinRequired':
+        return 'Minimum ${widget.minWordCount} words required';
+      case 'progressComplete':
+        return 'Complete! Great work!';
+      default:
+        return 'Missing Text for key: $key';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +95,7 @@ class _WritingScreenState extends State<WritingScreen> {
   void _updateWritingState(int index) {
     final text = _textControllers[index]!.text;
     final wordCount = _countWords(text);
+
     final isComplete =
         wordCount >= widget.minWordCount && text.trim().isNotEmpty;
 
@@ -113,11 +156,11 @@ class _WritingScreenState extends State<WritingScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All writings uploaded successfully!')),
+          SnackBar(content: Text(_getText('snackbarUploadSuccess'))),
         );
       }
     } catch (e) {
-      _showError('Failed to upload writings: $e');
+      _showError(_getText('errorUploadFailed', args: {'error': e.toString()}));
     } finally {
       setState(() => _isSubmitting = false);
     }
@@ -127,21 +170,23 @@ class _WritingScreenState extends State<WritingScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Text'),
-        content: const Text(
-          'Are you sure you want to clear all text for this segment?',
-        ),
+        title: Text(_getText('dialogClearTitle')),
+        content: Text(_getText('dialogClearContent')),
+
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(_getText('dialogClearActionCancel')),
           ),
           TextButton(
             onPressed: () {
               _textControllers[_currentPage]!.clear();
               Navigator.pop(context);
             },
-            child: const Text('Clear', style: TextStyle(color: Colors.red)),
+            child: Text(
+              _getText('dialogClearActionClear'),
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -159,7 +204,7 @@ class _WritingScreenState extends State<WritingScreen> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Write Segments'),
+        title: Text(_getText('appBarTitle')),
         actions: [
           // Progress indicator
           Center(
@@ -186,7 +231,7 @@ class _WritingScreenState extends State<WritingScreen> {
                 : IconButton(
                     icon: const Icon(Icons.check),
                     onPressed: _submitWritings,
-                    tooltip: 'Submit All',
+                    tooltip: _getText('submitTooltip'),
                   ),
         ],
       ),
@@ -243,6 +288,7 @@ class _WritingScreenState extends State<WritingScreen> {
   Widget _buildSegmentPage(SegmentPrompt segment, int index) {
     final state = _writingStates[index]!;
     final isComplete = state.isComplete;
+    final wordsNeeded = widget.minWordCount - state.wordCount;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -272,7 +318,10 @@ class _WritingScreenState extends State<WritingScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${state.wordCount} words',
+                          _getText(
+                            'segmentWordCount',
+                            args: {'count': state.wordCount},
+                          ),
                           style: TextStyle(
                             color: isComplete ? Colors.green : Colors.grey,
                             fontWeight: FontWeight.w500,
@@ -280,7 +329,10 @@ class _WritingScreenState extends State<WritingScreen> {
                         ),
                         if (!isComplete && state.wordCount > 0) ...[
                           Text(
-                            ' (${widget.minWordCount - state.wordCount} more needed)',
+                            _getText(
+                              'segmentWordsNeeded',
+                              args: {'needed': wordsNeeded},
+                            ),
                             style: TextStyle(
                               color: Colors.orange.shade700,
                               fontSize: 12,
@@ -311,101 +363,137 @@ class _WritingScreenState extends State<WritingScreen> {
                         size: 20,
                         color: Theme.of(context).colorScheme.secondary,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Writing Instructions for this ',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.secondary,
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.lightbulb_outline,
+                                  color: Colors.blue.shade700,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _getText('promptCardTitle'),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Writing Instructions for this ',
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.secondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(segment.prompt),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(segment.prompt),
+
+                  const SizedBox(height: 24),
+
+                  // Text editor
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _getText('textFieldTitle'),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          if (state.text.isNotEmpty)
+                            TextButton.icon(
+                              onPressed: _clearCurrentText,
+                              icon: const Icon(Icons.clear, size: 18),
+
+                              label: Text(_getText('textFieldClearButton')),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isComplete
+                                ? Colors.green
+                                : Colors.grey.shade300,
+                            width: 2,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _textControllers[index],
+                          focusNode: _focusNodes[index],
+                          maxLines: null,
+                          minLines: 12,
+                          style: const TextStyle(fontSize: 16, height: 1.6),
+                          decoration: InputDecoration(
+                            hintText: _getText('textFieldHint'),
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.all(16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Progress bar
+                      if (state.wordCount > 0)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LinearProgressIndicator(
+                              value: (state.wordCount / widget.minWordCount)
+                                  .clamp(0.0, 1.0),
+                              backgroundColor: Colors.grey.shade200,
+                              color: isComplete
+                                  ? Colors.green
+                                  : Theme.of(context).primaryColor,
+                              minHeight: 6,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              isComplete
+                                  ? _getText('progressComplete')
+                                  : _getText('progressMinRequired'),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isComplete
+                                    ? Colors.green
+                                    : Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Text editor
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Your Writing',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (state.text.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: _clearCurrentText,
-                      icon: const Icon(Icons.clear, size: 18),
-                      label: const Text('Clear'),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isComplete ? Colors.green : Colors.grey.shade300,
-                    width: 2,
-                  ),
-                ),
-                child: TextField(
-                  controller: _textControllers[index],
-                  focusNode: _focusNodes[index],
-                  maxLines: null,
-                  minLines: 12,
-                  style: const TextStyle(fontSize: 16, height: 1.6),
-                  decoration: InputDecoration(
-                    hintText: 'Start writing here...',
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Progress bar
-              if (state.wordCount > 0)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    LinearProgressIndicator(
-                      value: (state.wordCount / widget.minWordCount).clamp(
-                        0.0,
-                        1.0,
-                      ),
-                      backgroundColor: Colors.grey.shade200,
-                      color: isComplete
-                          ? Colors.green
-                          : Theme.of(context).primaryColor,
-                      minHeight: 6,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isComplete
-                          ? 'Complete! Great work!'
-                          : 'Minimum ${widget.minWordCount} words required',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isComplete ? Colors.green : Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-            ],
           ),
         ],
       ),

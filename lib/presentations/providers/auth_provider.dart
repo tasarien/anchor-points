@@ -1,6 +1,6 @@
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:google_sign_in_ios/google_sign_in_ios.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -45,7 +45,6 @@ class AuthProvider extends ChangeNotifier {
     }
 
     isLoading = false;
-
     notifyListeners();
   }
 
@@ -71,7 +70,6 @@ class AuthProvider extends ChangeNotifier {
     await Supabase.instance.client.auth.signOut();
     DataProvider appData = Provider.of<DataProvider>(context, listen: false);
     appData.clearData();
-    
   }
 
   Future<void> resetPassword(String email) async {
@@ -91,41 +89,6 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<AuthResponse> googleSignIn(BuildContext context) async {
-    isLoading = true;
-    errorMessage = null;
-    notifyListeners();
-
-    const webClientId =
-        '570438305235-bq3saaseg8fbg07kmk3gbib8vcsu10nd.apps.googleusercontent.com';
-
-    const iosClientId =
-        '570438305235-48lj77plr3qbbgfspdl8mh4lrkam0lbb.apps.googleusercontent.com';
-
-    final GoogleSignIn signIn = GoogleSignIn.instance;
-
-    signIn.initialize(clientId: iosClientId);
-
-    // Perform the sign in
-    final googleAccount = await signIn.authenticate();
-    final googleAuthorization = await googleAccount.authorizationClient
-        .authorizationForScopes([]);
-    final googleAuthentication = googleAccount!.authentication;
-    final idToken = googleAuthentication.idToken;
-    final accessToken = googleAuthorization!.accessToken;
-
-    if (idToken == null) {
-      throw 'No ID Token found.';
-    }
-
-    isLoading = false;
-    notifyListeners();
-    return supabase.auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: idToken,
-      accessToken: accessToken,
-    );
-  }
-
+  
   bool get isAuthenticated => user != null;
 }

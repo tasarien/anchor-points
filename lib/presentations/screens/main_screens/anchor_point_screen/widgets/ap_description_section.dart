@@ -1,3 +1,4 @@
+import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../controllers/anchor_point_controller.dart';
 
@@ -9,6 +10,10 @@ class ApDescriptionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
+    String getText(String text) {
+      return AppLocalizations.of(context).translate(text);
+    }
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 400),
@@ -24,7 +29,7 @@ class ApDescriptionSection extends StatelessWidget {
             maxLines: 10,
             decoration: InputDecoration(
               hintText: controller.descriptionController.text.isEmpty
-                  ? 'No description provided'
+                  ? getText('no_description')
                   : null,
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),

@@ -1,3 +1,4 @@
+import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:flutter/material.dart';
 import '../controllers/anchor_point_controller.dart';
@@ -15,6 +16,10 @@ class ApDraftingSection extends StatelessWidget {
     final appData = Provider.of<DataProvider>(context);
     final ap = appData.currentAnchorPoint!;
 
+    String getText(String text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
     Widget content;
 
     if (ap.segmentPrompts == null || ap.segmentPrompts!.isEmpty) {
@@ -28,7 +33,7 @@ class ApDraftingSection extends StatelessWidget {
             );
           }
         },
-        child: Center(child: Text('No segments yet')),
+        child: Center(child: Text(getText('no_segments_yet'))),
       );
     } else {
       content = Card(

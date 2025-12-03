@@ -1,3 +1,4 @@
+import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/anchor_point_controller.dart';
@@ -16,12 +17,16 @@ class ApHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final appData = Provider.of<DataProvider>(context, listen: false);
 
+    String getText(String text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
     return AppBar(
       actions: [
         if (controller.editMode)
           WholeButton(
             onPressed: controller.revertChanges,
-            text: 'Cancel',
+            text: getText('cancel'),
             suggested: false,
             wide: true,
           ),
@@ -30,7 +35,7 @@ class ApHeader extends StatelessWidget implements PreferredSizeWidget {
           WholeButton(
             onPressed: () => controller.saveChanges(context),
             icon: FontAwesomeIcons.floppyDisk,
-            text: 'Save',
+            text: getText('save'),
             wide: true,
           ),
         if (!controller.editMode)
@@ -40,7 +45,7 @@ class ApHeader extends StatelessWidget implements PreferredSizeWidget {
               children: [
                 WholeButton(
                   icon: FontAwesomeIcons.pen,
-                  text: 'Edit',
+                  text: getText('edit'),
                   onPressed: () {
                     controller.toggleEditMode();
                     Navigator.of(context).pop();
@@ -48,17 +53,19 @@ class ApHeader extends StatelessWidget implements PreferredSizeWidget {
                 ),
                 WholeButton(
                   icon: FontAwesomeIcons.trash,
-                  text: 'Delete',
+                  text: getText('delete'),
                   onPressed: () {
                     Navigator.of(context).pop();
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        content: const Text('Delete anchor point?'),
+                        // Removed const because getText is not constant
+                        content: Text(getText('delete_anchor_point_question')),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Cancel'),
+                            // Removed const
+                            child: Text(getText('cancel')),
                           ),
                           controller.loading
                               ? const LoadingIndicator()
@@ -68,17 +75,19 @@ class ApHeader extends StatelessWidget implements PreferredSizeWidget {
                                     Navigator.of(context).pop();
                                     await SupabaseAnchorPointSource()
                                         .deleteAnchorPoint(
-                                          appData.currentAnchorPoint!.id,
-                                        );
+                                      appData.currentAnchorPoint!.id,
+                                    );
                                     controller.loading = false;
                                     await appData.loadOwnedAnchorPoints();
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Anchor point deleted'),
+                                      // Removed const
+                                      SnackBar(
+                                        content: Text(getText('anchor_point_deleted')),
                                       ),
                                     );
                                   },
-                                  child: const Text('Delete'),
+                                  // Removed const
+                                  child: Text(getText('delete')),
                                 ),
                         ],
                       ),

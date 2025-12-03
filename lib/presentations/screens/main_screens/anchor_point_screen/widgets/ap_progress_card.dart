@@ -10,7 +10,7 @@ class ApProgressCard extends StatelessWidget {
   final AnchorPointController controller;
   const ApProgressCard({Key? key, required this.controller}) : super(key: key);
 
-  String t(BuildContext context, String key) =>
+  String getText(BuildContext context, String key) =>
       AppLocalizations.of(context).translate(key);
 
   @override
@@ -66,9 +66,9 @@ class ApProgressCard extends StatelessWidget {
                     ),
                     nodeLabelBuilder: (index, completed) {
                       final labels = [
-                        t(context, 'ap_status_1'),
-                        t(context, 'ap_status_2'),
-                        t(context, 'ap_status_3'),
+                        getText(context, 'ap_status_1'),
+                        getText(context, 'ap_status_2'),
+                        getText(context, 'ap_status_3'),
                       ];
                       return Text(
                         labels[index],

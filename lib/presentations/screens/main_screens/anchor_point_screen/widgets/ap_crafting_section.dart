@@ -49,7 +49,7 @@ class ApCraftingSection extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      Text('Create requests'),
+                      Text(getText('create_request')),
                       Icon(Icons.chevron_right),
                     ],
                   ),

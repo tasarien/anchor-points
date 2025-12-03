@@ -70,6 +70,7 @@ class AnchorPoint {
           );
         }
       }
+      debugPrint(finalSegments.toString());
       return finalSegments;
     }
 
