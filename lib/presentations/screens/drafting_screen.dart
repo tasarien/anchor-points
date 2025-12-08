@@ -42,7 +42,10 @@ class _DraftingScreenState extends State<DraftingScreen> {
 
   void _addSegment({int? index}) {
     setState(() {
-      final newSegment = SegmentPrompt(segmentData: SegmentData(name: "", symbol: "✨"), prompt: "", );
+      final newSegment = SegmentPrompt(
+        segmentData: SegmentData(name: "", symbol: "✨"),
+        prompt: "",
+      );
       if (index != null && index >= 0 && index < _segmentPrompts.length) {
         _segmentPrompts.insert(index + 1, newSegment);
       } else {
@@ -127,8 +130,12 @@ class _DraftingScreenState extends State<DraftingScreen> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     bool excluded = index > 6;
     final segment = _segmentPrompts[index];
-    final nameController = TextEditingController(text: segment.segmentData.name);
-    final symbolController = TextEditingController(text: segment.segmentData.symbol);
+    final nameController = TextEditingController(
+      text: segment.segmentData.name,
+    );
+    final symbolController = TextEditingController(
+      text: segment.segmentData.symbol,
+    );
     final promptController = TextEditingController(text: segment.prompt);
 
     nameController.selection = TextSelection.collapsed(

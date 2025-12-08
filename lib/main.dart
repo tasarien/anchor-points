@@ -61,8 +61,8 @@ class MyApp extends StatelessWidget {
             title: 'Anchor Points',
             debugShowCheckedModeBanner: false,
             themeMode: settings.themeMode,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            //theme: AppTheme.lightTheme,
+            theme: AppTheme.darkTheme,
             locale: settings.locale,
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: const [

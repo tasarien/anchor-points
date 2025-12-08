@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   //Lighter Palette
-  static const Color darkTeal = Color(0xFF1A3637);
+  static const Color darkTeal = Color.fromARGB(255, 34, 70, 71);
   static const Color beige = Color(0xFFD8BC97);
   static const Color sageGreen = Color(0xFF677C69);
   static const Color paleGreen = Color.fromARGB(255, 211, 217, 212);
   static const Color terracotta = Color(0xFFC84C39);
-  static const Color veryDarkTeal = Color(0xFF0A1515);
+  static const Color veryDarkTeal = Color.fromARGB(255, 7, 16, 16);
 
   // Darker Palette
   static const Color darkTealLight = Color(0xFF2A4647);

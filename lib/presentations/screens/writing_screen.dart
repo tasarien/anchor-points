@@ -1,8 +1,11 @@
+import 'package:action_slider/action_slider.dart';
+import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
 import 'package:anchor_point_app/data/models/writing_state.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class WritingScreen extends StatefulWidget {
@@ -32,45 +35,8 @@ class _WritingScreenState extends State<WritingScreen> {
   Map<int, FocusNode> _focusNodes = {};
 
   // Simple placeholder for localization logic
-  String _getText(String key, {Map<String, dynamic>? args}) {
-    // In a real app, you would look up the key in a map based on the current locale
-    // and replace any placeholders with values from 'args'.
-    switch (key) {
-      case 'appBarTitle':
-        return 'Write Segments';
-      case 'submitTooltip':
-        return 'Submit All';
-      case 'snackbarUploadSuccess':
-        return 'All writings uploaded successfully!';
-      case 'errorUploadFailed':
-        return 'Failed to upload writings: ${args?['error']}';
-      case 'dialogClearTitle':
-        return 'Clear Text';
-      case 'dialogClearContent':
-        return 'Are you sure you want to clear all text for this segment?';
-      case 'dialogClearActionCancel':
-        return 'Cancel';
-      case 'dialogClearActionClear':
-        return 'Clear';
-      case 'segmentWordCount':
-        return '${args?['count']} words';
-      case 'segmentWordsNeeded':
-        return ' (${args?['needed']} more needed)';
-      case 'promptCardTitle':
-        return 'Writing Prompt';
-      case 'textFieldTitle':
-        return 'Your Writing';
-      case 'textFieldClearButton':
-        return 'Clear';
-      case 'textFieldHint':
-        return 'Start writing here...';
-      case 'progressMinRequired':
-        return 'Minimum ${widget.minWordCount} words required';
-      case 'progressComplete':
-        return 'Complete! Great work!';
-      default:
-        return 'Missing Text for key: $key';
-    }
+  String getText(text) {
+    return AppLocalizations.of(context).translate(text);
   }
 
   @override
@@ -156,11 +122,11 @@ class _WritingScreenState extends State<WritingScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_getText('snackbarUploadSuccess'))),
+          SnackBar(content: Text(getText('snackbarUploadSuccess'))),
         );
       }
     } catch (e) {
-      _showError(_getText('errorUploadFailed', args: {'error': e.toString()}));
+      _showError(getText('errorUploadFailed'));
     } finally {
       setState(() => _isSubmitting = false);
     }
@@ -170,13 +136,12 @@ class _WritingScreenState extends State<WritingScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(_getText('dialogClearTitle')),
-        content: Text(_getText('dialogClearContent')),
-
+        title: Text(getText('dialogClearTitle')),
+        content: Text(getText('dialogClearContent')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(_getText('dialogClearActionCancel')),
+            child: Text(getText('dialogClearActionCancel')),
           ),
           TextButton(
             onPressed: () {
@@ -184,7 +149,7 @@ class _WritingScreenState extends State<WritingScreen> {
               Navigator.pop(context);
             },
             child: Text(
-              _getText('dialogClearActionClear'),
+              getText('dialogClearActionClear'),
               style: const TextStyle(color: Colors.red),
             ),
           ),
@@ -203,61 +168,58 @@ class _WritingScreenState extends State<WritingScreen> {
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_getText('appBarTitle')),
-        actions: [
-          // Progress indicator
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                '${_getCompletedCount()}/${widget.segments.length}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          // Submit button
-          if (_canSubmit())
-            _isSubmitting
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: LoadingIndicator(),
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.check),
-                    onPressed: _submitWritings,
-                    tooltip: _getText('submitTooltip'),
-                  ),
-        ],
-      ),
+      appBar: AppBar(title: Text(getText('writing_screen_title'))),
       body: Column(
         children: [
           // Page indicator with status
           Container(
             padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                widget.segments.length,
-                (index) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _writingStates[index]?.isComplete == true
-                        ? colorScheme.secondary
-                        : index == _currentPage
-                        ? colorScheme.onSurface
-                        : colorScheme.primary,
-                  ),
+            child: Column(
+              spacing: 10,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(getText('segments') + ": "),
+                    Text('${_currentPage + 1}/${widget.segments.length}'),
+                  ],
                 ),
-              ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(widget.segments.length + 1, (index) {
+                    if (index == widget.segments.length) {
+                      // Submit page arrow
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        child: FaIcon(
+                          FontAwesomeIcons.paperPlane,
+                          size: 12,
+                          color: _currentPage == index
+                              ? colorScheme.onSurface
+                              : _canSubmit()
+                              ? colorScheme.secondary
+                              : colorScheme.tertiary,
+                        ),
+                      );
+                    } else {
+                      // Segment circles
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _writingStates[index]?.isComplete == true
+                              ? colorScheme.secondary
+                              : index == _currentPage
+                              ? colorScheme.onSurface
+                              : colorScheme.primary,
+                        ),
+                      );
+                    }
+                  }),
+                ),
+              ],
             ),
           ),
 
@@ -265,23 +227,219 @@ class _WritingScreenState extends State<WritingScreen> {
           Expanded(
             child: PageView.builder(
               controller: _pageController,
-              itemCount: widget.segments.length,
+              itemCount: widget.segments.length + 1, // +1 for submit page
               onPageChanged: (index) {
-                // Unfocus previous page
-                _focusNodes[_currentPage]?.unfocus();
+                // Unfocus previous page if it's a writing page
+                if (_currentPage < widget.segments.length) {
+                  _focusNodes[_currentPage]?.unfocus();
+                }
                 setState(() => _currentPage = index);
-                // Focus new page after a brief delay
-                Future.delayed(const Duration(milliseconds: 300), () {
-                  _focusNodes[index]?.requestFocus();
-                });
+                // Focus new page after a brief delay if it's a writing page
+                if (index < widget.segments.length) {
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    _focusNodes[index]?.requestFocus();
+                  });
+                }
               },
               itemBuilder: (context, index) {
+                if (index == widget.segments.length) {
+                  return _buildSubmitPage();
+                }
                 return _buildSegmentPage(widget.segments[index], index);
               },
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSubmitPage() {
+    final totalWords = _writingStates.values.fold(
+      0,
+      (sum, state) => sum + state.wordCount,
+    );
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 40),
+
+          // Completion icon
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _canSubmit()
+                  ? Colors.green.withOpacity(0.1)
+                  : Colors.orange.withOpacity(0.1),
+            ),
+            child: Icon(
+              _canSubmit() ? Icons.check_circle : Icons.pending,
+              size: 60,
+              color: _canSubmit() ? Colors.green : Colors.orange,
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Title
+          Text(
+            _canSubmit()
+                ? getText('submitPageTitleReady')
+                : getText('submitPageTitleNotReady'),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Description
+          Text(
+            _canSubmit()
+                ? getText('submitPageDescriptionReady')
+                : getText('submitPageDescriptionNotReady'),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 40),
+
+          // Summary card
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    getText('submitPageSummaryTitle'),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSummaryRow(
+                    Icons.article,
+                    getText('submitPageSegmentsLabel'),
+                    '${widget.segments.length}',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildSummaryRow(
+                    Icons.check_circle,
+                    getText('submitPageCompletedLabel'),
+                    '${_getCompletedCount()}/${widget.segments.length}',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildSummaryRow(
+                    Icons.text_fields,
+                    getText('submitPageTotalWordsLabel'),
+                    '$totalWords',
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 40),
+
+          ActionSlider.standard(),
+
+          // Submit button
+          if (_canSubmit())
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _submitWritings,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isSubmitting
+                    ? const LoadingIndicator()
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.send),
+                          const SizedBox(width: 8),
+                          Text(
+                            getText('submitPageSubmitButton'),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  // Navigate back to first incomplete segment
+                  for (int i = 0; i < widget.segments.length; i++) {
+                    if (!(_writingStates[i]?.isComplete ?? false)) {
+                      _pageController.animateToPage(
+                        i,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                      break;
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.edit),
+                    const SizedBox(width: 8),
+                    Text(
+                      getText('submitPageContinueButton'),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.secondary),
+        const SizedBox(width: 12),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 16))),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 
@@ -318,10 +476,7 @@ class _WritingScreenState extends State<WritingScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _getText(
-                            'segmentWordCount',
-                            args: {'count': state.wordCount},
-                          ),
+                          getText('segmentWordCount'),
                           style: TextStyle(
                             color: isComplete ? Colors.green : Colors.grey,
                             fontWeight: FontWeight.w500,
@@ -329,10 +484,7 @@ class _WritingScreenState extends State<WritingScreen> {
                         ),
                         if (!isComplete && state.wordCount > 0) ...[
                           Text(
-                            _getText(
-                              'segmentWordsNeeded',
-                              args: {'needed': wordsNeeded},
-                            ),
+                            getText('segmentWordsNeeded'),
                             style: TextStyle(
                               color: Colors.orange.shade700,
                               fontSize: 12,
@@ -350,149 +502,116 @@ class _WritingScreenState extends State<WritingScreen> {
           const SizedBox(height: 24),
 
           // Prompt card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.lightbulb_outline,
-                        size: 20,
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      getText('writing_prompts'),
+                      style: TextStyle(
                         color: Theme.of(context).colorScheme.secondary,
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.blue.shade200),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(segment.prompt),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Text editor
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          getText('textFieldTitle'),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.lightbulb_outline,
-                                  color: Colors.blue.shade700,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _getText('promptCardTitle'),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue.shade700,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Writing Instructions for this ',
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.secondary,
-                                  ),
-                                ),
-                              ],
+                        if (state.text.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: _clearCurrentText,
+                            icon: const Icon(Icons.clear, size: 18),
+                            label: Text(getText('textFieldClearButton')),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
                             ),
-                            const SizedBox(height: 8),
-                            Text(segment.prompt),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Text editor
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _getText('textFieldTitle'),
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
-                          if (state.text.isNotEmpty)
-                            TextButton.icon(
-                              onPressed: _clearCurrentText,
-                              icon: const Icon(Icons.clear, size: 18),
-
-                              label: Text(_getText('textFieldClearButton')),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.red,
-                              ),
-                            ),
-                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isComplete
+                              ? Colors.green
+                              : Colors.grey.shade300,
+                          width: 2,
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
+                      child: TextField(
+                        controller: _textControllers[index],
+                        focusNode: _focusNodes[index],
+                        maxLines: null,
+                        minLines: 12,
+                        style: const TextStyle(fontSize: 16, height: 1.6),
+                        decoration: InputDecoration(
+                          hintText: getText('textFieldHint'),
+                          hintStyle: TextStyle(color: Colors.grey.shade400),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.all(16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Progress bar
+                    if (state.wordCount > 0)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          LinearProgressIndicator(
+                            value: (state.wordCount / widget.minWordCount)
+                                .clamp(0.0, 1.0),
+                            backgroundColor: Colors.grey.shade200,
                             color: isComplete
                                 ? Colors.green
-                                : Colors.grey.shade300,
-                            width: 2,
+                                : Theme.of(context).primaryColor,
+                            minHeight: 6,
+                            borderRadius: BorderRadius.circular(3),
                           ),
-                        ),
-                        child: TextField(
-                          controller: _textControllers[index],
-                          focusNode: _focusNodes[index],
-                          maxLines: null,
-                          minLines: 12,
-                          style: const TextStyle(fontSize: 16, height: 1.6),
-                          decoration: InputDecoration(
-                            hintText: _getText('textFieldHint'),
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.all(16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Progress bar
-                      if (state.wordCount > 0)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            LinearProgressIndicator(
-                              value: (state.wordCount / widget.minWordCount)
-                                  .clamp(0.0, 1.0),
-                              backgroundColor: Colors.grey.shade200,
+                          const SizedBox(height: 4),
+                          Text(
+                            isComplete
+                                ? getText('progressComplete')
+                                : getText('progressMinRequired'),
+                            style: TextStyle(
+                              fontSize: 12,
                               color: isComplete
                                   ? Colors.green
-                                  : Theme.of(context).primaryColor,
-                              minHeight: 6,
-                              borderRadius: BorderRadius.circular(3),
+                                  : Colors.grey.shade600,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              isComplete
-                                  ? _getText('progressComplete')
-                                  : _getText('progressMinRequired'),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isComplete
-                                    ? Colors.green
-                                    : Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],

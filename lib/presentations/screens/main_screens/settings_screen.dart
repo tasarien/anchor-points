@@ -132,9 +132,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _navigateToInvitationsSettings(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => InvitationsSettingsScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => InvitationsSettingsScreen()),
+    );
   }
 }
 
@@ -189,7 +189,12 @@ class AccountSettingsScreen extends StatelessWidget {
                       ),
                       WholeButton(
                         onPressed: () {
-                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => PremiumAccountScreen(appData: appData)));
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  PremiumAccountScreen(appData: appData),
+                            ),
+                          );
                         },
                         wide: true,
                         text: getText("settings_premium_button"),
@@ -268,30 +273,31 @@ class _DisplayAdjustmentScreenState extends State<DisplayAdjustmentScreen> {
                   ),
                 ),
               ),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      SectionTab(
-                        text: getText("settings_display_tab_color_title"),
-                      ),
-                      const SizedBox(height: 20),
-                      WholeButton(
-                        icon: settings.isDarkMode
-                            ? FontAwesomeIcons.moon
-                            : FontAwesomeIcons.sun,
-                        text: settings.isDarkMode
-                            ? getText('dark_mode')
-                            : getText('light_mode'),
-                        onPressed: () {
-                          settings.toggleDarkMode();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              // If light mode will be implemented -->
+              // Card(
+              //   child: Padding(
+              //     padding: const EdgeInsets.all(16.0),
+              //     child: Column(
+              //       children: [
+              //         SectionTab(
+              //           text: getText("settings_display_tab_color_title"),
+              //         ),
+              //         const SizedBox(height: 20),
+              //         WholeButton(
+              //           icon: settings.isDarkMode
+              //               ? FontAwesomeIcons.moon
+              //               : FontAwesomeIcons.sun,
+              //           text: settings.isDarkMode
+              //               ? getText('dark_mode')
+              //               : getText('light_mode'),
+              //           onPressed: () {
+              //             settings.toggleDarkMode();
+              //           },
+              //         ),
+              //       ],
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
@@ -384,7 +390,7 @@ class CompanionsSettingsScreen extends StatelessWidget {
   }
 }
 
-  class InvitationsSettingsScreen extends StatelessWidget {
+class InvitationsSettingsScreen extends StatelessWidget {
   const InvitationsSettingsScreen({super.key});
 
   @override

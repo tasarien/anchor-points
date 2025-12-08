@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:audio_waveforms/audio_waveforms.dart' as waveforms;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -83,8 +84,6 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
 
   void _initializeFromWidgetSegments() {
     _segmentsLocal = widget.segments.map((s) {
-      // map FinalAPSegment -> SegmentDataLocal
-      // adjust field accesses if FinalAPSegment shape differs
       final text = (s.text != null && s.text!.isNotEmpty)
           ? s.text!
           : "No text provided";
@@ -114,7 +113,6 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     if (!_isRecorderReady || _isRecording) return;
     final current = _segmentsLocal[_currentSegmentIndex];
 
-    // Remove any previous recording for this segment (and delete file)
     _deleteRecordingInternal(_currentSegmentIndex, deleteFile: true);
     current.isPlayerPrepared = false;
 
@@ -166,7 +164,6 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     final path = seg.audioPath;
     if (path == null) return;
 
-    // dispose any existing controller
     seg.playerController?.dispose();
     seg.playerController = waveforms.PlayerController();
     seg.isPlayerPrepared = false;
@@ -238,6 +235,12 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     );
   }
 
+  int get _completedCount {
+    return _segmentsLocal
+        .where((s) => s.audioPath != null && s.audioPath!.isNotEmpty)
+        .length;
+  }
+
   Future<void> _submitRecordings() async {
     if (!_canSubmit || _isUploading) return;
 
@@ -288,8 +291,6 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
         _uploadProgress = 1.0;
       });
 
-      // optional: update a row or return urls to caller — adjust as needed
-      // Example: Navigator.pop with urls
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -318,53 +319,70 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     }
   }
 
-  // UI
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Record Audio Segments'),
         actions: [
-          if (_canSubmit)
-            _isUploading
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.check),
-                    onPressed: _submitRecordings,
-                    tooltip: 'Submit All',
-                  ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                '$_completedCount/${_segmentsLocal.length}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
       body: Column(
         children: [
-          // page indicators (like original)
+          // page indicators with arrow for submit page
           Container(
             padding: const EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _segmentsLocal.length,
-                (index) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _segmentsLocal[index].audioPath != null
-                        ? colorScheme.secondary
-                        : index == _currentSegmentIndex
-                        ? colorScheme.onSurface
-                        : colorScheme.primary,
-                  ),
-                ),
-              ),
+              children: List.generate(_segmentsLocal.length + 1, (index) {
+                if (index == _segmentsLocal.length) {
+                  // Submit page arrow
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    child: FaIcon(
+                      FontAwesomeIcons.arrowRight,
+                      size: 12,
+                      color: _currentSegmentIndex == index
+                          ? colorScheme.onSurface
+                          : _canSubmit
+                          ? colorScheme.secondary
+                          : colorScheme.primary.withOpacity(0.3),
+                    ),
+                  );
+                } else {
+                  // Segment circles
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _segmentsLocal[index].audioPath != null
+                          ? colorScheme.secondary
+                          : index == _currentSegmentIndex
+                          ? colorScheme.onSurface
+                          : colorScheme.tertiary,
+                    ),
+                  );
+                }
+              }),
             ),
           ),
 
@@ -372,27 +390,304 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
           Expanded(
             child: PageView.builder(
               controller: _pageController,
-              itemCount: _segmentsLocal.length,
+              itemCount: _segmentsLocal.length + 1, // +1 for submit page
               physics: _isRecording || _isUploading
                   ? const NeverScrollableScrollPhysics()
                   : const AlwaysScrollableScrollPhysics(),
               onPageChanged: (index) async {
-                // If recording, stop first
                 if (_isRecording) {
                   await _stopRecording();
                 }
                 setState(() => _currentSegmentIndex = index);
               },
               itemBuilder: (context, index) {
+                if (index == _segmentsLocal.length) {
+                  return _buildSubmitPage();
+                }
                 return _buildSegmentPage(index);
               },
             ),
           ),
 
-          // controls
-          _buildRecordingControls(),
+          // controls - only show for recording pages, not submit page
+          if (_currentSegmentIndex < _segmentsLocal.length)
+            _buildRecordingControls(),
         ],
       ),
+    );
+  }
+
+  Widget _buildSubmitPage() {
+    String getText(text) {
+      return AppLocalizations.of(context).translate(text);
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 40),
+
+          // Completion icon
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _canSubmit
+                  ? Colors.green.withOpacity(0.1)
+                  : Colors.orange.withOpacity(0.1),
+            ),
+            child: Icon(
+              _canSubmit ? Icons.check_circle : Icons.pending,
+              size: 60,
+              color: _canSubmit ? Colors.green : Colors.orange,
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Title
+          Text(
+            _canSubmit ? 'Ready to Submit' : 'Almost There!',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Description
+          Text(
+            _canSubmit
+                ? 'All segments have been recorded. Review your recordings and submit when ready.'
+                : 'Please complete all audio recordings before submitting.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 40),
+
+          // Summary card
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recording Summary',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSummaryRow(
+                    Icons.mic,
+                    'Total Segments',
+                    '${_segmentsLocal.length}',
+                  ),
+                  const SizedBox(height: 12),
+                  _buildSummaryRow(
+                    Icons.check_circle,
+                    'Recordings Completed',
+                    '$_completedCount/${_segmentsLocal.length}',
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 16),
+
+                  // List of segments with status
+                  ...List.generate(_segmentsLocal.length, (index) {
+                    final seg = _segmentsLocal[index];
+                    final hasRecording = seg.audioPath != null;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Icon(
+                            hasRecording
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
+                            color: hasRecording ? Colors.green : Colors.grey,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              seg.original.segmentData.name,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: hasRecording
+                                    ? Colors.black87
+                                    : Colors.grey,
+                              ),
+                            ),
+                          ),
+                          if (!hasRecording)
+                            TextButton(
+                              onPressed: () {
+                                _pageController.animateToPage(
+                                  index,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                              child: const Text('Record'),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 40),
+
+          // Action buttons
+          if (_isUploading) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(
+                      _uploadStatusMessage,
+                      style: const TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: _uploadProgress,
+                      minHeight: 6,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            if (_canSubmit)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submitRecordings,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.cloud_upload),
+                      SizedBox(width: 8),
+                      Text(
+                        'Submit All Recordings',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Navigate to first incomplete segment
+                    for (int i = 0; i < _segmentsLocal.length; i++) {
+                      if (_segmentsLocal[i].audioPath == null) {
+                        _pageController.animateToPage(
+                          i,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                        break;
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.mic),
+                      SizedBox(width: 8),
+                      Text(
+                        'Continue Recording',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 12),
+
+            // Back button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  if (_currentSegmentIndex > 0) {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Back to Recordings',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.secondary),
+        const SizedBox(width: 12),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 16))),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 
@@ -494,7 +789,7 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
               ),
             )
           else
-            const SizedBox(height: 92), // placeholder for consistent layout
+            const SizedBox(height: 92),
         ],
       ),
     );
@@ -524,8 +819,7 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton.icon(
-                  onPressed:
-                      null, // pause/resume not implemented in this simpler controller usage
+                  onPressed: null,
                   icon: const Icon(Icons.pause),
                   label: const Text('Pause'),
                   style: ElevatedButton.styleFrom(
@@ -577,18 +871,6 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
                   disabled: !hasRecording,
                   onPressed: hasRecording ? _deleteRecording : null,
                 ),
-                if (hasRecording)
-                  OutlinedButton.icon(
-                    onPressed: _startRecording,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Record More'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ],
@@ -610,22 +892,14 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _currentSegmentIndex == _segmentsLocal.length - 1
-                    ? WholeButton(
-                        wide: true,
-                        onPressed: _canSubmit && !_isRecording
-                            ? _submitRecordings
-                            : null,
-                        icon: FontAwesomeIcons.paperPlane,
-                        disabled: !_canSubmit,
-                        text: "Submit",
-                      )
-                    : WholeButton(
-                        onPressed: _goToNextSegment,
-                        icon: FontAwesomeIcons.chevronRight,
-                        text: "Next",
-                        wide: true,
-                      ),
+                child: WholeButton(
+                  onPressed: _goToNextSegment,
+                  icon: FontAwesomeIcons.chevronRight,
+                  text: _currentSegmentIndex == _segmentsLocal.length - 1
+                      ? "Review"
+                      : "Next",
+                  wide: true,
+                ),
               ),
             ],
           ),
@@ -635,7 +909,7 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
   }
 
   void _goToNextSegment() {
-    if (_currentSegmentIndex < _segmentsLocal.length - 1) {
+    if (_currentSegmentIndex < _segmentsLocal.length) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
