@@ -15,30 +15,39 @@ class ApHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appData = Provider.of<DataProvider>(context, listen: false);
-
     String getText(String text) {
       return AppLocalizations.of(context).translate(text);
     }
 
+    DataProvider appData = context.watch<DataProvider>();
+
     return AppBar(
       actions: [
-        if (controller.editMode)
+        // Show Cancel and Save buttons when in edit mode
+        if (controller.editMode) ...[
           WholeButton(
             onPressed: controller.revertChanges,
             text: getText('cancel'),
             suggested: false,
             wide: true,
           ),
-        const SizedBox(width: 10),
-        if (controller.editMode)
-          WholeButton(
-            onPressed: () => controller.saveChanges(context),
-            icon: FontAwesomeIcons.floppyDisk,
-            text: getText('save'),
-            wide: true,
-          ),
-        if (!controller.editMode)
+          const SizedBox(width: 10),
+          controller.saveLoading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: LoadingIndicator(),
+                )
+              : WholeButton(
+                  onPressed: () => _handleSave(context, controller, appData),
+                  icon: FontAwesomeIcons.floppyDisk,
+                  text: getText('save'),
+                  wide: true,
+                ),
+          const SizedBox(width: 10),
+        ],
+
+        // Show menu popup when NOT in edit mode
+        if (!controller.editMode && !controller.statusArchived)
           WholePopup(
             content: Row(
               mainAxisSize: MainAxisSize.min,
@@ -51,46 +60,17 @@ class ApHeader extends StatelessWidget implements PreferredSizeWidget {
                     Navigator.of(context).pop();
                   },
                 ),
+                const SizedBox(width: 10),
                 WholeButton(
                   icon: FontAwesomeIcons.trash,
                   text: getText('delete'),
                   onPressed: () {
                     Navigator.of(context).pop();
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        // Removed const because getText is not constant
-                        content: Text(getText('delete_anchor_point_question')),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            // Removed const
-                            child: Text(getText('cancel')),
-                          ),
-                          controller.loading
-                              ? const LoadingIndicator()
-                              : TextButton(
-                                  onPressed: () async {
-                                    controller.loading = true;
-                                    Navigator.of(context).pop();
-                                    await SupabaseAnchorPointSource()
-                                        .deleteAnchorPoint(
-                                      appData.currentAnchorPoint!.id,
-                                    );
-                                    controller.loading = false;
-                                    await appData.loadOwnedAnchorPoints();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      // Removed const
-                                      SnackBar(
-                                        content: Text(getText('anchor_point_deleted')),
-                                      ),
-                                    );
-                                  },
-                                  // Removed const
-                                  child: Text(getText('delete')),
-                                ),
-                        ],
-                      ),
+                    _showDeleteConfirmation(
+                      context,
+                      controller,
+                      appData,
+                      getText,
                     );
                   },
                 ),
@@ -104,6 +84,147 @@ class ApHeader extends StatelessWidget implements PreferredSizeWidget {
           ),
       ],
     );
+  }
+
+  /// Handles saving changes
+  Future<void> _handleSave(
+    BuildContext context,
+    AnchorPointController controller,
+    DataProvider appData,
+  ) async {
+    try {
+      await controller.saveChanges(context);
+
+      // Refresh the anchor point in the provider's list
+      if (controller.currentAnchorPoint != null) {
+        await appData.refreshAnchorPoint(controller.currentAnchorPoint!.id);
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).translate('changes_saved'),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).translate('save_failed'),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Shows delete confirmation dialog
+  void _showDeleteConfirmation(
+    BuildContext context,
+    AnchorPointController controller,
+    DataProvider appData,
+    String Function(String) getText,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(getText('delete_anchor_point')),
+        content: Text(getText('delete_anchor_point_question')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(getText('cancel')),
+          ),
+          TextButton(
+            onPressed: () => _handleDelete(
+              context,
+              dialogContext,
+              controller,
+              appData,
+              getText,
+            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(getText('sure_delete')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Handles anchor point deletion
+  Future<void> _handleDelete(
+    BuildContext context,
+    BuildContext dialogContext,
+    AnchorPointController controller,
+    DataProvider appData,
+    String Function(String) getText,
+  ) async {
+    if (controller.currentAnchorPoint == null) return;
+
+    // Close dialog first
+    if (dialogContext.mounted) {
+      Navigator.of(dialogContext).pop();
+    }
+
+    // Show loading indicator
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 16),
+              Text(getText('deleting')),
+            ],
+          ),
+          duration: const Duration(seconds: 30),
+        ),
+      );
+    }
+
+    try {
+      final anchorPointId = controller.currentAnchorPoint!.id;
+
+      // Delete from backend
+      await SupabaseAnchorPointSource().deleteAnchorPoint(anchorPointId);
+
+      // Reload data
+      await appData.loadOwnedAnchorPoints();
+      await appData.pickFirstAnchorPoint();
+      appData.tabController.jumpToTab(1);
+
+      // Show success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(getText('anchor_point_deleted')),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error deleting anchor point: $e');
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(getText('delete_failed')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

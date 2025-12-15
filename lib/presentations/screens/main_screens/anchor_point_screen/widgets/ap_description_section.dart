@@ -19,24 +19,21 @@ class ApDescriptionSection extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 400),
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextField(
-            controller: controller.descriptionController,
-            textAlign: TextAlign.center,
-            readOnly: !controller.editMode,
-            minLines: 1,
-            maxLines: 10,
-            decoration: InputDecoration(
-              hintText: controller.descriptionController.text.isEmpty
-                  ? getText('no_description')
-                  : null,
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(
-                  color: controller.editMode ? scheme.error : scheme.tertiary,
-                  width: controller.editMode ? 2 : 1,
-                ),
+        child: TextField(
+          controller: controller.descriptionController,
+          textAlign: TextAlign.center,
+          readOnly: !controller.editMode,
+          minLines: 1,
+          maxLines: 10,
+          decoration: InputDecoration(
+            hintText: controller.descriptionController.text.isEmpty
+                ? getText('no_description')
+                : null,
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: controller.editMode ? scheme.error : scheme.tertiary,
+                width: controller.editMode ? 2 : 1,
               ),
             ),
           ),

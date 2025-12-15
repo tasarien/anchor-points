@@ -14,6 +14,16 @@ class SupabaseUserInfoSource {
     return response;
   }
 
+  Future<Map<String, dynamic>> getUserInfobyId(String id) async {
+    final response = await supabase
+        .from('profiles')
+        .select()
+        .eq("user_id", id)
+        .single();
+
+    return response;
+  }
+
   Future<void> updatePinnedAp(int anchorPointId) async {
     await supabase
         .from('profiles')

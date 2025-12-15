@@ -287,7 +287,22 @@ class _DraftingScreenState extends State<DraftingScreen> {
     String localeCode = settings.locale.languageCode;
     return Scaffold(
       appBar: AppBar(
-        title: Text(getText("drafting_screen_title")),
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          spacing: 20,
+          children: [
+            IconButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await Future.delayed(Duration(milliseconds: 300));
+                appData.changeTabVisibility(true);
+              },
+              icon: FaIcon(FontAwesomeIcons.chevronLeft, size: 18),
+            ),
+            Text(getText("drafting_screen_title")),
+          ],
+        ),
         actions: [
           WholePopup(
             content: Column(
@@ -362,39 +377,46 @@ class _DraftingScreenState extends State<DraftingScreen> {
                       ],
                     ),
                   ),
-            ActionSlider.standard(
-              child: Text(getText("save_segments")),
-              loadingIcon: CircularProgressIndicator(),
-              toggleColor: colorScheme.tertiary,
-              rolling: true,
-              icon: FaIcon(
-                AnchorPointIcons.anchor_point_step1,
-                color: colorScheme.onSurface,
-                size: 40,
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ActionSlider.standard(
+                child: Text(getText("save_segments")),
+                loadingIcon: CircularProgressIndicator(),
+                toggleColor: colorScheme.tertiary,
+                rolling: true,
+                icon: FaIcon(
+                  AnchorPointIcons.anchor_point_step1,
+                  color: colorScheme.onSurface,
+                  size: 40,
+                ),
+                successIcon: FaIcon(FontAwesomeIcons.check),
+                failureIcon: FaIcon(FontAwesomeIcons.xmark),
+                action: (controller) async {
+                  controller.loading();
+
+                  try {
+                    await _updateSegmentPromptsInSupabase(true, appData);
+
+                    controller.success();
+
+                    await Future.delayed(Durations.extralong1);
+                    appData.updateOnlyCurrentAnchorPoint();
+                    Navigator.pop(context);
+                    appData.changeTabVisibility(true);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(getText("succes_in_updating_prompts")),
+                      ),
+                    );
+                  } catch (e) {
+                    controller.failure();
+                    await Future.delayed(Durations.extralong1);
+
+                    print(e.toString());
+                  }
+                },
               ),
-              successIcon: FaIcon(FontAwesomeIcons.check),
-              failureIcon: FaIcon(FontAwesomeIcons.xmark),
-              action: (controller) async {
-                controller.loading();
-
-                try {
-                  await _updateSegmentPromptsInSupabase(true, appData);
-
-                  controller.success();
-                  await Future.delayed(Durations.extralong1);
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(getText("succes_in_updating_prompts")),
-                    ),
-                  );
-                } catch (e) {
-                  controller.failure();
-                  await Future.delayed(Durations.extralong1);
-
-                  print(e.toString());
-                }
-              },
             ),
           ],
         ),

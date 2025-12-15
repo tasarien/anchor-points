@@ -2,11 +2,16 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/data/models/anchor_point_model.dart';
+import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
+import 'package:anchor_point_app/presentations/providers/data_provider.dart';
+import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
 import 'package:audio_waveforms/audio_waveforms.dart' as waveforms;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -15,32 +20,13 @@ import 'package:anchor_point_app/data/models/final_ap_segment.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 
-class SegmentDataLocal {
-  final String id;
-  final FinalAPSegment original;
-  String text;
-  String? audioPath;
-  String? audioUrl;
-  waveforms.PlayerController? playerController;
-  bool isPlaying = false;
-  bool isPlayerPrepared = false;
-
-  SegmentDataLocal({
-    required this.id,
-    required this.original,
-    required this.text,
-    this.audioPath,
-    this.audioUrl,
-  });
-}
-
 class AudioRecorderScreen extends StatefulWidget {
-  final List<FinalAPSegment> segments;
+  final int anchorPointId;
   final String supabaseBucket;
 
   const AudioRecorderScreen({
     Key? key,
-    required this.segments,
+    required this.anchorPointId,
     this.supabaseBucket = 'audio-recordings',
   }) : super(key: key);
 
@@ -52,12 +38,16 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
   final PageController _pageController = PageController();
   final Uuid _uuid = const Uuid();
 
+  late AnchorPoint anchorPoint;
+  List<FinalAPSegment> segments = [];
+
   waveforms.RecorderController? _recorderController;
 
   List<SegmentDataLocal> _segmentsLocal = [];
   bool _isRecorderReady = false;
   bool _isRecording = false;
   bool _isLoading = true;
+  bool _loadingAp = false;
   int _currentSegmentIndex = 0;
   bool _isUploading = false;
 
@@ -82,8 +72,26 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     super.dispose();
   }
 
-  void _initializeFromWidgetSegments() {
-    _segmentsLocal = widget.segments.map((s) {
+  Future<void> _fetchAnchorPoint() async {
+    setState(() {
+      _loadingAp = true;
+    });
+
+    final AnchorPoint ap = await AnchorPoint.fromJsonAsync(
+      await SupabaseAnchorPointSource().getAnchorPoint(widget.anchorPointId),
+    );
+
+    setState(() {
+      anchorPoint = ap;
+      segments = ap.finalSegments ?? [];
+      _loadingAp = false;
+    });
+  }
+
+  void _initializeFromWidgetSegments() async {
+    await _fetchAnchorPoint();
+
+    _segmentsLocal = segments.map((s) {
       final text = (s.text != null && s.text!.isNotEmpty)
           ? s.text!
           : "No text provided";
@@ -326,9 +334,26 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
       return AppLocalizations.of(context).translate(text);
     }
 
+    DataProvider appData = context.watch<DataProvider>();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Record Audio Segments'),
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          spacing: 20,
+          children: [
+            IconButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await Future.delayed(Duration(milliseconds: 300));
+                appData.changeTabVisibility(true);
+              },
+              icon: FaIcon(FontAwesomeIcons.chevronLeft, size: 18),
+            ),
+            Text(getText("record_screen_title")),
+          ],
+        ),
         actions: [
           Center(
             child: Padding(
@@ -344,76 +369,78 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // page indicators with arrow for submit page
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_segmentsLocal.length + 1, (index) {
-                if (index == _segmentsLocal.length) {
-                  // Submit page arrow
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    child: FaIcon(
-                      FontAwesomeIcons.arrowRight,
-                      size: 12,
-                      color: _currentSegmentIndex == index
-                          ? colorScheme.onSurface
-                          : _canSubmit
-                          ? colorScheme.secondary
-                          : colorScheme.primary.withOpacity(0.3),
-                    ),
-                  );
-                } else {
-                  // Segment circles
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _segmentsLocal[index].audioPath != null
-                          ? colorScheme.secondary
-                          : index == _currentSegmentIndex
-                          ? colorScheme.onSurface
-                          : colorScheme.tertiary,
-                    ),
-                  );
-                }
-              }),
-            ),
-          ),
+      body: _loadingAp
+          ? Center(child: LoadingIndicator())
+          : Column(
+              children: [
+                // page indicators with arrow for submit page
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_segmentsLocal.length + 1, (index) {
+                      if (index == _segmentsLocal.length) {
+                        // Submit page arrow
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          child: FaIcon(
+                            FontAwesomeIcons.arrowRight,
+                            size: 12,
+                            color: _currentSegmentIndex == index
+                                ? colorScheme.onSurface
+                                : _canSubmit
+                                ? colorScheme.secondary
+                                : colorScheme.primary.withOpacity(0.3),
+                          ),
+                        );
+                      } else {
+                        // Segment circles
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _segmentsLocal[index].audioPath != null
+                                ? colorScheme.secondary
+                                : index == _currentSegmentIndex
+                                ? colorScheme.onSurface
+                                : colorScheme.tertiary,
+                          ),
+                        );
+                      }
+                    }),
+                  ),
+                ),
 
-          // page view
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: _segmentsLocal.length + 1, // +1 for submit page
-              physics: _isRecording || _isUploading
-                  ? const NeverScrollableScrollPhysics()
-                  : const AlwaysScrollableScrollPhysics(),
-              onPageChanged: (index) async {
-                if (_isRecording) {
-                  await _stopRecording();
-                }
-                setState(() => _currentSegmentIndex = index);
-              },
-              itemBuilder: (context, index) {
-                if (index == _segmentsLocal.length) {
-                  return _buildSubmitPage();
-                }
-                return _buildSegmentPage(index);
-              },
-            ),
-          ),
+                // page view
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _segmentsLocal.length + 1, // +1 for submit page
+                    physics: _isRecording || _isUploading
+                        ? const NeverScrollableScrollPhysics()
+                        : const AlwaysScrollableScrollPhysics(),
+                    onPageChanged: (index) async {
+                      if (_isRecording) {
+                        await _stopRecording();
+                      }
+                      setState(() => _currentSegmentIndex = index);
+                    },
+                    itemBuilder: (context, index) {
+                      if (index == _segmentsLocal.length) {
+                        return _buildSubmitPage();
+                      }
+                      return _buildSegmentPage(index);
+                    },
+                  ),
+                ),
 
-          // controls - only show for recording pages, not submit page
-          if (_currentSegmentIndex < _segmentsLocal.length)
-            _buildRecordingControls(),
-        ],
-      ),
+                // controls - only show for recording pages, not submit page
+                if (_currentSegmentIndex < _segmentsLocal.length)
+                  _buildRecordingControls(),
+              ],
+            ),
     );
   }
 
@@ -925,4 +952,23 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
       );
     }
   }
+}
+
+class SegmentDataLocal {
+  final String id;
+  final FinalAPSegment original;
+  String text;
+  String? audioPath;
+  String? audioUrl;
+  waveforms.PlayerController? playerController;
+  bool isPlaying = false;
+  bool isPlayerPrepared = false;
+
+  SegmentDataLocal({
+    required this.id,
+    required this.original,
+    required this.text,
+    this.audioPath,
+    this.audioUrl,
+  });
 }

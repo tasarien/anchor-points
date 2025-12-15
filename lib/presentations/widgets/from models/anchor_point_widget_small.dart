@@ -68,8 +68,7 @@ class _AnchorPointWidgetSmallState extends State<AnchorPointWidgetSmall> {
                     ),
                     IconButton(
                       onPressed: () {
-                        appData.changeCurrentAnchorPoint(widget.anchorPoint);
-                        debugPrint(appData.currentAnchorPoint!.name);
+                        appData.setNewCurrentAnchorPoint(widget.anchorPoint);
                         appData.changeCurrentTab(0);
                       },
                       icon: FaIcon(FontAwesomeIcons.chevronRight),

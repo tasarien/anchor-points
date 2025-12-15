@@ -98,8 +98,8 @@
 
   "save": "Save",
   "edit": "Edit",
-
-  "delete_anchor_point_question": "Delete anchor point?",
+  "delete_anchor_point" : "Delete",
+  "delete_anchor_point_question": "Are you sure that you want to delete this Anchor Point?",
   "notifications" : "Notifications",
   "no_notifications_yet" : "No notifications yet",
   "settings_notifications_tab_title": "Notifications",
@@ -173,7 +173,27 @@
   "progressMinRequired": "Minimum {minWordCount} words required",
   "progressComplete": "Complete! Great work!",
   "writing_screen_title" : "Text of Anchor Point",
-  "segments" : "Segments"
+  "segments" : "Segments",
+
+  "requests_screen" : "Requests",
+  "request_description_for_companion_part1" : "Other user ask you to ",
+  "request_description_for_companion_part2_text" : "write a text for his Anchor Point. ",
+  "request_description_for_companion_part2_audio" : "write a text for his Anchor Point. ",
+
+  "request_action_decline" : "Decline",
+  "request_action_record" : "Record",
+  "request_action_write" : "Write",
+
+  "request_from" : "Request from:",
+  "request_message_label" : "Message for this request:",
+
+  "request_type_created" : "created",
+"request_type_pending" : "pending",
+"request_type_declined" : "declined",
+"request_type_completed" : "completed",
+
+"created_info" : "This request will be available, when according text request will be completed."
+
 }
 
 

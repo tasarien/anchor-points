@@ -1,6 +1,9 @@
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
+import 'package:anchor_point_app/presentations/screens/main_screens/anchor_point_screen/widgets/ap_card_template.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../controllers/anchor_point_controller.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:anchor_point_app/presentations/screens/drafting_screen.dart';
@@ -14,7 +17,8 @@ class ApDraftingSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appData = Provider.of<DataProvider>(context);
-    final ap = appData.currentAnchorPoint!;
+    final ap = appData.currentAPController.currentAnchorPoint!;
+    final bool available = controller.step1Present;
 
     String getText(String text) {
       return AppLocalizations.of(context).translate(text);
@@ -26,6 +30,7 @@ class ApDraftingSection extends StatelessWidget {
       content = GestureDetector(
         onTap: () {
           if (ap.status == AnchorPointStatus.created) {
+            appData.changeTabVisibility(false);
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => DraftingScreen(anchorPoint: ap),
@@ -33,7 +38,16 @@ class ApDraftingSection extends StatelessWidget {
             );
           }
         },
-        child: Center(child: Text(getText('no_segments_yet'))),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(getText('no_segments_yet')),
+              SizedBox(width: 20),
+              FaIcon(FontAwesomeIcons.chevronRight, size: 15),
+            ],
+          ),
+        ),
       );
     } else {
       content = Card(
@@ -63,9 +77,15 @@ class ApDraftingSection extends StatelessWidget {
     return Padding(
       key: controller.draftingSectionKey,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [Expanded(child: content)],
+      child: ApCardTemplate(
+        available: controller.step1Present,
+        activeStep: controller.progressController.currentStep == 0,
+        step: 1,
+        icon: AnchorPointIcons.anchor_point_step1,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [Expanded(child: content)],
+        ),
       ),
     );
   }

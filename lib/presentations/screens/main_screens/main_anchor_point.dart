@@ -73,13 +73,17 @@ class _MainAnchorPointScreenState extends State<MainAnchorPointScreen> {
 
   Widget goToPremiumSelector() {
     DataProvider appData = context.watch<DataProvider>();
-    
+
     return WholeButton(
       text: getText('change_for_premium'),
       icon: FontAwesomeIcons.arrowUpFromGroundWater,
       wide: true,
       onPressed: () {
-        Navigator.of(context).push(MaterialPageRoute(builder: (context) => PremiumAccountScreen(appData: appData,)));
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => PremiumAccountScreen(appData: appData),
+          ),
+        );
       },
     );
   }
@@ -90,19 +94,11 @@ class _MainAnchorPointScreenState extends State<MainAnchorPointScreen> {
 
     return Scaffold(
       body: Center(
-        child: 
-        appData.userInfo!.extendedAccount ?
-        // Below full options for extended account
-        appData.currentAnchorPoint != null
-          ? AnchorPointScreen(appData: appData)
-          : createFirstAPButton()
-          // Below options for base account
-          : Column(
-            children: [
-              DemoAnchorPointScreen(appData: appData),
-              goToPremiumSelector()
-            ],
-          )
+        child: appData.isReloading
+            ? LoadingIndicator()
+            : appData.currentAPController.currentAnchorPoint != null
+            ? AnchorPointScreen(appData: appData)
+            : createFirstAPButton(),
       ),
     );
   }

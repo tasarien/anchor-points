@@ -1,21 +1,25 @@
 import 'package:action_slider/action_slider.dart';
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
 import 'package:anchor_point_app/data/models/writing_state.dart';
+import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
+import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class WritingScreen extends StatefulWidget {
-  final List<SegmentPrompt> segments;
+  final int anchorPointId;
   final String supabaseBucket;
   final int minWordCount;
 
   const WritingScreen({
     Key? key,
-    required this.segments,
+    required this.anchorPointId,
     this.supabaseBucket = 'text-segments',
     this.minWordCount = 50,
   }) : super(key: key);
@@ -27,8 +31,13 @@ class WritingScreen extends StatefulWidget {
 class _WritingScreenState extends State<WritingScreen> {
   late PageController _pageController;
 
+  late AnchorPoint anchorPoint;
+  List<SegmentPrompt> segments = [];
+
   int _currentPage = 0;
   bool _isSubmitting = false;
+
+  bool _loading = false;
 
   Map<int, WritingState> _writingStates = {};
   Map<int, TextEditingController> _textControllers = {};
@@ -43,11 +52,29 @@ class _WritingScreenState extends State<WritingScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+
     _initializeWritingStates();
   }
 
-  void _initializeWritingStates() {
-    for (int i = 0; i < widget.segments.length; i++) {
+  Future<void> _fetchAnchorPoint() async {
+    setState(() {
+      _loading = true;
+    });
+
+    final AnchorPoint ap = await AnchorPoint.fromJsonAsync(
+      await SupabaseAnchorPointSource().getAnchorPoint(widget.anchorPointId),
+    );
+
+    setState(() {
+      anchorPoint = ap;
+      segments = ap.segmentPrompts ?? [];
+      _loading = false;
+    });
+  }
+
+  void _initializeWritingStates() async {
+    await _fetchAnchorPoint();
+    for (int i = 0; i < segments.length; i++) {
       _writingStates[i] = WritingState();
       _textControllers[i] = TextEditingController();
       _focusNodes[i] = FocusNode();
@@ -114,7 +141,7 @@ class _WritingScreenState extends State<WritingScreen> {
       if (mounted) {
         Navigator.of(context).pop({
           'completed': true,
-          'segments': widget.segments.length,
+          'segments': segments.length,
           'totalWords': _writingStates.values.fold(
             0,
             (sum, state) => sum + state.wordCount,
@@ -167,90 +194,110 @@ class _WritingScreenState extends State<WritingScreen> {
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
+    DataProvider appData = context.watch<DataProvider>();
     return Scaffold(
-      appBar: AppBar(title: Text(getText('writing_screen_title'))),
-      body: Column(
-        children: [
-          // Page indicator with status
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              spacing: 10,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          spacing: 20,
+          children: [
+            IconButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await Future.delayed(Duration(milliseconds: 300));
+                appData.changeTabVisibility(true);
+              },
+              icon: FaIcon(FontAwesomeIcons.chevronLeft, size: 18),
+            ),
+            Text(getText("writing_screen_title")),
+          ],
+        ),
+      ),
+      body: _loading
+          ? Center(child: LoadingIndicator())
+          : Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(getText('segments') + ": "),
-                    Text('${_currentPage + 1}/${widget.segments.length}'),
-                  ],
+                // Page indicator with status
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    spacing: 10,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(getText('segments') + ": "),
+                          Text('${_currentPage + 1}/${segments.length}'),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(segments.length + 1, (index) {
+                          if (index == segments.length) {
+                            // Submit page arrow
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              child: FaIcon(
+                                FontAwesomeIcons.paperPlane,
+                                size: 12,
+                                color: _currentPage == index
+                                    ? colorScheme.onSurface
+                                    : _canSubmit()
+                                    ? colorScheme.secondary
+                                    : colorScheme.tertiary,
+                              ),
+                            );
+                          } else {
+                            // Segment circles
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _writingStates[index]?.isComplete == true
+                                    ? colorScheme.secondary
+                                    : index == _currentPage
+                                    ? colorScheme.onSurface
+                                    : colorScheme.primary,
+                              ),
+                            );
+                          }
+                        }),
+                      ),
+                    ],
+                  ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(widget.segments.length + 1, (index) {
-                    if (index == widget.segments.length) {
-                      // Submit page arrow
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        child: FaIcon(
-                          FontAwesomeIcons.paperPlane,
-                          size: 12,
-                          color: _currentPage == index
-                              ? colorScheme.onSurface
-                              : _canSubmit()
-                              ? colorScheme.secondary
-                              : colorScheme.tertiary,
-                        ),
-                      );
-                    } else {
-                      // Segment circles
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _writingStates[index]?.isComplete == true
-                              ? colorScheme.secondary
-                              : index == _currentPage
-                              ? colorScheme.onSurface
-                              : colorScheme.primary,
-                        ),
-                      );
-                    }
-                  }),
+
+                // PageView
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: segments.length + 1, // +1 for submit page
+                    onPageChanged: (index) {
+                      // Unfocus previous page if it's a writing page
+                      if (_currentPage < segments.length) {
+                        _focusNodes[_currentPage]?.unfocus();
+                      }
+                      setState(() => _currentPage = index);
+                      // Focus new page after a brief delay if it's a writing page
+                      if (index < segments.length) {
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          _focusNodes[index]?.requestFocus();
+                        });
+                      }
+                    },
+                    itemBuilder: (context, index) {
+                      if (index == segments.length) {
+                        return _buildSubmitPage();
+                      }
+                      return _buildSegmentPage(segments[index], index);
+                    },
+                  ),
                 ),
               ],
             ),
-          ),
-
-          // PageView
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: widget.segments.length + 1, // +1 for submit page
-              onPageChanged: (index) {
-                // Unfocus previous page if it's a writing page
-                if (_currentPage < widget.segments.length) {
-                  _focusNodes[_currentPage]?.unfocus();
-                }
-                setState(() => _currentPage = index);
-                // Focus new page after a brief delay if it's a writing page
-                if (index < widget.segments.length) {
-                  Future.delayed(const Duration(milliseconds: 300), () {
-                    _focusNodes[index]?.requestFocus();
-                  });
-                }
-              },
-              itemBuilder: (context, index) {
-                if (index == widget.segments.length) {
-                  return _buildSubmitPage();
-                }
-                return _buildSegmentPage(widget.segments[index], index);
-              },
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -330,13 +377,13 @@ class _WritingScreenState extends State<WritingScreen> {
                   _buildSummaryRow(
                     Icons.article,
                     getText('submitPageSegmentsLabel'),
-                    '${widget.segments.length}',
+                    '${segments.length}',
                   ),
                   const SizedBox(height: 12),
                   _buildSummaryRow(
                     Icons.check_circle,
                     getText('submitPageCompletedLabel'),
-                    '${_getCompletedCount()}/${widget.segments.length}',
+                    '${_getCompletedCount()}/${segments.length}',
                   ),
                   const SizedBox(height: 12),
                   _buildSummaryRow(
@@ -391,7 +438,7 @@ class _WritingScreenState extends State<WritingScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   // Navigate back to first incomplete segment
-                  for (int i = 0; i < widget.segments.length; i++) {
+                  for (int i = 0; i < segments.length; i++) {
                     if (!(_writingStates[i]?.isComplete ?? false)) {
                       _pageController.animateToPage(
                         i,

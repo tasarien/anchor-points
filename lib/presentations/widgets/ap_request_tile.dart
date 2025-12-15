@@ -1,8 +1,10 @@
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/request_model.dart';
+import 'package:anchor_point_app/presentations/screens/crafting_screen.dart';
 import 'package:anchor_point_app/presentations/screens/recorder_screen.dart';
 import 'package:anchor_point_app/presentations/screens/writing_screen.dart';
+import 'package:anchor_point_app/presentations/widgets/from%20models/request_card_widget.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -24,27 +26,52 @@ class RequestListTile extends StatelessWidget {
     this.onTap,
   }) : super(key: key);
 
-  void handleTap(BuildContext context) {
+  void handleTap(BuildContext context) async {
     switch (request.requestedFor) {
-      case SourceType.you:
+      case CompanionType.you:
         request.type == 'text'
             ? Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) =>
-                      WritingScreen(segments: anchorPoint.segmentPrompts!),
+                      WritingScreen(anchorPointId: anchorPoint.id),
                 ),
               )
             : Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) =>
-                      AudioRecorderScreen(segments: anchorPoint.finalSegments!),
+                      AudioRecorderScreen(anchorPointId: anchorPoint.id),
                 ),
               );
 
         break;
+      case CompanionType.companion:
+        showRequestDialog(context);
       default:
         break;
     }
+  }
+
+  showRequestDialog(BuildContext context) async {
+    debugPrint(request.companionUsername.toString());
+    await request.getUserName();
+    debugPrint(request.companionUsername.toString());
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Request details'),
+          content: RequestCard(request: request),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   IconData _getTypeIcon() {
@@ -55,37 +82,19 @@ class RequestListTile extends StatelessWidget {
 
   IconData _getRequestedForIcon() {
     switch (request.requestedFor) {
-      case 'you':
+      case CompanionType.you:
         return FontAwesomeIcons.user;
-      case 'companion':
+      case CompanionType.companion:
         return FontAwesomeIcons.userGroup;
-      case 'ai':
+      case CompanionType.ai:
         return FontAwesomeIcons.wind;
       default:
         return FontAwesomeIcons.circleQuestion;
     }
   }
 
-  Color _getStatusColor(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    switch (request.status) {
-      case 'pending':
-        return colorScheme.tertiary;
-      case 'completed':
-        return Colors.green;
-      case 'cancelled':
-        return colorScheme.error;
-      default:
-        return colorScheme.onSurface;
-    }
-  }
-
-  String _getStatusLabel() {
-    return request.status[0].toUpperCase() + request.status.substring(1);
-  }
-
   String _getRequestedForLabel() {
-    if (request.requestedFor == 'companion') {
+    if (request.requestedFor == CompanionType.companion) {
       if (companionUsername != null) {
         return companionUsername!;
       } else if (inviteeName != null) {
@@ -171,17 +180,17 @@ class RequestListTile extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: _getStatusColor(context).withOpacity(0.15),
+            color: request.getStatusColor().withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: _getStatusColor(context).withOpacity(0.3),
+              color: request.getStatusColor().withOpacity(0.3),
               width: 1,
             ),
           ),
           child: Text(
-            _getStatusLabel(),
+            getText(request.getStatusLabel()),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: _getStatusColor(context),
+              color: request.getStatusColor(),
               fontWeight: FontWeight.w600,
               fontSize: 11,
             ),

@@ -52,7 +52,6 @@ class AnchorPoint {
             .toList();
 
     List<FinalAPSegment>? makeFinalSegments() {
-      debugPrint('1');
       List<FinalAPSegment> finalSegments = [];
       if (segmentPrompts != null) {
         int index = 0;
@@ -70,7 +69,6 @@ class AnchorPoint {
           );
         }
       }
-      debugPrint(finalSegments.toString());
       return finalSegments;
     }
 
@@ -105,6 +103,32 @@ class AnchorPoint {
 
   AnchorPointWidgetSmall buildAPWidgetSmall() {
     return AnchorPointWidgetSmall(anchorPoint: this);
+  }
+
+  AnchorPoint copyWith({
+    int? id,
+    String? ownerId,
+    String? name,
+    String? description,
+    AnchorPointStatus? status,
+    String? imageUrl,
+    List<SegmentPrompt>? segmentPrompts,
+    List<FinalAPSegment>? finalSegments,
+    RequestModel? audioRequest,
+    RequestModel? textRequest,
+  }) {
+    return AnchorPoint(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      status: status ?? this.status,
+      imageUrl: imageUrl ?? this.imageUrl,
+      segmentPrompts: segmentPrompts ?? this.segmentPrompts,
+      finalSegments: finalSegments ?? this.finalSegments,
+      audioRequest: audioRequest ?? this.audioRequest,
+      textRequest: textRequest ?? this.textRequest,
+    );
   }
 }
 

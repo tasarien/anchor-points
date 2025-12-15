@@ -1,14 +1,18 @@
 import 'package:action_slider/action_slider.dart'; // Assuming this is used somewhere not shown or can be removed
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/person_invitation.dart';
 import 'package:anchor_point_app/data/models/user_profile.dart';
+import 'package:anchor_point_app/data/sources/request_source.dart';
+import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 // import 'package:anchor_point_app/data/sources/request_source.dart'; // Unused in this snippet
 import 'package:anchor_point_app/presentations/widgets/drawers/companion_picker.dart';
 import 'package:anchor_point_app/presentations/widgets/drawers/invite_person.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart'; // Unused in this snippet
 
 enum CompanionType { you, companion, ai }
@@ -92,8 +96,27 @@ class _CraftingScreenState extends State<CraftingScreen> {
       return AppLocalizations.of(context).translate(text);
     }
 
+    DataProvider appData = context.watch<DataProvider>();
+
     return Scaffold(
-      appBar: AppBar(title: Text(getText('crafting_sheet_title'))),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          spacing: 20,
+          children: [
+            IconButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await Future.delayed(Duration(milliseconds: 300));
+                appData.changeTabVisibility(true);
+              },
+              icon: FaIcon(FontAwesomeIcons.chevronLeft, size: 18),
+            ),
+            Text(getText("crafting_screen_title")),
+          ],
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -102,8 +125,8 @@ class _CraftingScreenState extends State<CraftingScreen> {
             Text(
               getText('crafting_sheet_subtitle'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.7),
-                  ),
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
             ),
             const SizedBox(height: 32),
 
@@ -149,15 +172,15 @@ class _CraftingScreenState extends State<CraftingScreen> {
                           onPressed: () async {
                             final UserProfile? result =
                                 await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              builder: (_) => PickCompanionBottomSheet(),
-                            );
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
+                                    ),
+                                  ),
+                                  builder: (_) => PickCompanionBottomSheet(),
+                                );
                             setState(() {
                               if (result != null) {
                                 textCompanion = result;
@@ -177,15 +200,15 @@ class _CraftingScreenState extends State<CraftingScreen> {
                           onPressed: () async {
                             final PersonInvitation? result =
                                 await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              builder: (_) => InvitePersonBottomSheet(),
-                            );
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
+                                    ),
+                                  ),
+                                  builder: (_) => InvitePersonBottomSheet(),
+                                );
                             setState(() {
                               if (result != null) {
                                 textCompanion = null;
@@ -209,12 +232,14 @@ class _CraftingScreenState extends State<CraftingScreen> {
                       controller: _textMessageController,
                       title: getText('message_editor_text_title'),
                       subtitle: textCompanion != null
-                          ? getText('request_user_write_text').replaceFirst(
-                              '{name}', textCompanion!.username!)
+                          ? getText(
+                              'request_user_write_text',
+                            ).replaceFirst('{name}', textCompanion!.username!)
                           : textInvitation != null
-                              ? getText('invite_user_write_text').replaceFirst(
-                                  '{name}', textInvitation!.name!)
-                              : getText('select_companion_warning'),
+                          ? getText(
+                              'invite_user_write_text',
+                            ).replaceFirst('{name}', textInvitation!.name!)
+                          : getText('select_companion_warning'),
                       icon: FontAwesomeIcons.envelopeOpenText,
                       combined: false,
                     ),
@@ -266,15 +291,15 @@ class _CraftingScreenState extends State<CraftingScreen> {
                           onPressed: () async {
                             final UserProfile? result =
                                 await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              builder: (_) => PickCompanionBottomSheet(),
-                            );
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
+                                    ),
+                                  ),
+                                  builder: (_) => PickCompanionBottomSheet(),
+                                );
                             setState(() {
                               if (result != null) {
                                 audioCompanion = result;
@@ -294,15 +319,15 @@ class _CraftingScreenState extends State<CraftingScreen> {
                           onPressed: () async {
                             final PersonInvitation? result =
                                 await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              builder: (_) => InvitePersonBottomSheet(),
-                            );
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
+                                    ),
+                                  ),
+                                  builder: (_) => InvitePersonBottomSheet(),
+                                );
                             setState(() {
                               if (result != null) {
                                 audioCompanion = null;
@@ -326,12 +351,14 @@ class _CraftingScreenState extends State<CraftingScreen> {
                       controller: _audioMessageController,
                       title: getText('message_editor_audio_title'),
                       subtitle: audioCompanion != null
-                          ? getText('request_user_record_audio').replaceFirst(
-                              '{name}', audioCompanion!.username!)
+                          ? getText(
+                              'request_user_record_audio',
+                            ).replaceFirst('{name}', audioCompanion!.username!)
                           : audioInvitation != null
-                              ? getText('invite_user_record_audio')
-                                  .replaceFirst('{name}', audioInvitation!.name!)
-                              : getText('select_companion_warning'),
+                          ? getText(
+                              'invite_user_record_audio',
+                            ).replaceFirst('{name}', audioInvitation!.name!)
+                          : getText('select_companion_warning'),
                       icon: FontAwesomeIcons.envelope,
                       combined: false,
                     ),
@@ -345,15 +372,17 @@ class _CraftingScreenState extends State<CraftingScreen> {
               _MessageEditor(
                 controller: _combinedMessageController,
                 title: getText('message_to_user').replaceFirst(
-                    '{name}',
-                    textCompanion != null
-                        ? textCompanion!.username!
-                        : textInvitation!.name!),
+                  '{name}',
+                  textCompanion != null
+                      ? textCompanion!.username!
+                      : textInvitation!.name!,
+                ),
                 subtitle: getText('request_both_text_audio').replaceFirst(
-                    '{name}',
-                    textCompanion != null
-                        ? textCompanion!.username!
-                        : textInvitation!.name!),
+                  '{name}',
+                  textCompanion != null
+                      ? textCompanion!.username!
+                      : textInvitation!.name!,
+                ),
                 icon: FontAwesomeIcons.envelope,
                 combined: true,
               ),
@@ -379,6 +408,7 @@ class _CraftingScreenState extends State<CraftingScreen> {
               textMessageController: _textMessageController,
               audioMessageController: _audioMessageController,
               combinedMessageController: _combinedMessageController,
+              needCombinedText: _needsCombinedEditor(),
               onContinue: () {
                 Navigator.of(context).pop(
                   CraftingSelection(
@@ -456,14 +486,14 @@ class _MessageEditor extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
                     ),
                   ],
                 ),
@@ -557,14 +587,14 @@ class _AIConfigurationCard extends StatelessWidget {
                     Text(
                       getText('ai_configuration_title'),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       getText('ai_configuration_subtitle'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
                     ),
                   ],
                 ),
@@ -631,8 +661,8 @@ class _AIFeatureRow extends StatelessWidget {
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
               ],
             ),
@@ -695,14 +725,14 @@ class _SectionCard extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
                     ),
                   ],
                 ),
@@ -782,8 +812,9 @@ class _ToggleSelector extends StatelessWidget {
                       option.label,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                         color: isSelected
                             ? colorScheme.onPrimaryContainer
                             : colorScheme.onSurface.withOpacity(0.8),
@@ -812,6 +843,7 @@ class _SummaryCard extends StatelessWidget {
   final TextEditingController textMessageController;
   final TextEditingController audioMessageController;
   final TextEditingController combinedMessageController;
+  final bool needCombinedText;
 
   const _SummaryCard({
     required this.anchorPoint,
@@ -825,6 +857,7 @@ class _SummaryCard extends StatelessWidget {
     required this.textMessageController,
     required this.audioMessageController,
     required this.combinedMessageController,
+    required this.needCombinedText,
   });
 
   String _getSummaryMessage(BuildContext context) {
@@ -884,6 +917,10 @@ class _SummaryCard extends StatelessWidget {
       return AppLocalizations.of(context).translate(text);
     }
 
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    DataProvider appData = context.watch<DataProvider>();
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -900,11 +937,69 @@ class _SummaryCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
-            WholeButton(
-              onPressed: onContinue,
-              text: getText('continue_button'),
-              wide: true,
-            )
+            ActionSlider.standard(
+              child: Text(getText("save_segments")),
+              loadingIcon: CircularProgressIndicator(),
+              toggleColor: colorScheme.tertiary,
+              rolling: true,
+              icon: FaIcon(
+                AnchorPointIcons.anchor_point_step2,
+                color: colorScheme.onSurface,
+                size: 40,
+              ),
+              successIcon: FaIcon(FontAwesomeIcons.check),
+              failureIcon: FaIcon(FontAwesomeIcons.xmark),
+              action: (controller) async {
+                controller.loading();
+
+                try {
+                  SupabaseRequestSource().createRequest(
+                    anchorPointId: anchorPoint.id,
+                    type: "text",
+                    requestedFor: textProvider,
+                    companionId: textCompanion?.id,
+                    message: needCombinedText
+                        ? combinedMessageController.text
+                        : textMessageController.text.isNotEmpty
+                        ? textMessageController.text
+                        : null,
+
+                    requestBody: {},
+                  );
+
+                  SupabaseRequestSource().createRequest(
+                    anchorPointId: anchorPoint.id,
+                    type: "audio",
+                    requestedFor: audioProvider,
+                    companionId: audioCompanion?.id,
+                    message: needCombinedText
+                        ? combinedMessageController.text
+                        : audioMessageController.text.isNotEmpty
+                        ? audioMessageController.text
+                        : null,
+                    requestBody: {},
+                  );
+
+                  controller.success();
+
+                  await Future.delayed(Durations.extralong1);
+                  appData.updateOnlyCurrentAnchorPoint();
+                  Navigator.pop(context);
+                  appData.changeTabVisibility(true);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(getText("succes_in_updating_prompts")),
+                    ),
+                  );
+                } catch (e) {
+                  controller.failure();
+                  await Future.delayed(Durations.extralong1);
+
+                  print(e.toString());
+                }
+              },
+            ),
           ],
         ),
       ),

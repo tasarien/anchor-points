@@ -1,6 +1,8 @@
 import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
+import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:step_progress/step_progress.dart';
 import '../controllers/anchor_point_controller.dart';
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
@@ -18,13 +20,14 @@ class ApProgressCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
+      key: controller.progressCardKey,
       padding: const EdgeInsets.all(8.0),
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: AnimatedCrossFade(
             duration: const Duration(milliseconds: 600),
-            crossFadeState: controller.progressCardOpened
+            crossFadeState: controller.isProgressCardOpened
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
             firstChild: GestureDetector(

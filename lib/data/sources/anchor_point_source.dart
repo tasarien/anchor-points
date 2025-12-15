@@ -13,6 +13,16 @@ class SupabaseAnchorPointSource {
     return response;
   }
 
+  Future<Map<String, dynamic>> getAnchorPoint(int anchorPointId) async {
+    final response = await supabase
+        .from('anchorPoints')
+        .select()
+        .eq('id', anchorPointId)
+        .single();
+
+    return response;
+  }
+
   Future<void> deleteAnchorPoint(int anchorPointId) async {
     await supabase.from('anchorPoints').delete().eq('id', anchorPointId);
   }

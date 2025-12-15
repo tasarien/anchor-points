@@ -2,8 +2,10 @@ import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/core/localizations/suggestions.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/providers/settings_provider.dart';
+import 'package:anchor_point_app/presentations/widgets/drawers/image_picker.dart';
 import 'package:anchor_point_app/presentations/widgets/global/section_tab.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,6 +20,8 @@ class CreateAnchorPointScreen extends StatefulWidget {
 class _CreateAnchorPointScreenState extends State<CreateAnchorPointScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  String imageUrl =
+      "https://lmsrhlknxtcwowxslqag.supabase.co/storage/v1/object/public/images/narrative_method_schema.png";
   bool _isLoading = false;
 
   Future<void> _submit(DataProvider appData) async {
@@ -49,6 +53,7 @@ class _CreateAnchorPointScreenState extends State<CreateAnchorPointScreen> {
       final response = await supabase.from('anchorPoints').insert({
         'name': name,
         'description': description.isEmpty ? null : description,
+        'image_url': imageUrl,
         'status': 'created',
       });
 
@@ -85,18 +90,35 @@ class _CreateAnchorPointScreenState extends State<CreateAnchorPointScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              Container(
-                height: 100,
-                clipBehavior: Clip.hardEdge,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                width: double.infinity,
-                child: Image.asset(
-                  'assets/images/empty_landscape.png',
-                  fit: BoxFit.fitWidth,
+              GestureDetector(
+                onTap: () async {
+                  final url = await showSupabaseImagePickerModal(context);
+                  if (url != null)
+                    setState(() {
+                      imageUrl = url;
+                    });
+                  ;
+                },
+                child: Container(
+                  height: 100,
+                  clipBehavior: Clip.hardEdge,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  width: double.infinity,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.fitWidth,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/images/empty_landscape.png',
+                        fit: BoxFit.fitWidth,
+                      );
+                    },
+                  ),
                 ),
               ),
+
               SizedBox(height: 20),
               Card(
                 child: Padding(

@@ -180,6 +180,7 @@ class AppTheme {
       secondary: AppColors.sageGreenLight,
       onSecondary: AppColors.beigeLight,
       error: AppColors.terracotta,
+      errorContainer: const Color.fromARGB(255, 129, 63, 53),
       onError: Colors.white,
       surface: AppColors.veryDarkTealLight,
       onSurface: AppColors.beige,

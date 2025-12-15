@@ -15,7 +15,7 @@ class OtherAPScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     DataProvider appData = context.watch<DataProvider>();
-    bool limitReached = appData.getAnchorPoints.length == appSetup['ap_limit'];
+    bool limitReached = appData.anchorPoints.length == appSetup['ap_limit'];
 
     String getText(text) {
       return AppLocalizations.of(context).translate(text);
@@ -28,10 +28,10 @@ class OtherAPScreen extends StatelessWidget {
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: appData.getAnchorPoints.length,
+              itemCount: appData.anchorPoints.length,
               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               itemBuilder: (context, index) {
-                AnchorPoint anchorPoint = appData.getAnchorPoints[index];
+                AnchorPoint anchorPoint = appData.anchorPoints[index];
                 return anchorPoint.buildAPWidgetSmall();
               },
             ),

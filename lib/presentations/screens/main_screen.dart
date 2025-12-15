@@ -38,6 +38,15 @@ class _MainScreenState extends State<MainScreen> {
                 NotificationsScreen(),
                 SettingsScreen(),
               ],
+
+              decoration: NavBarDecoration(
+                border: BoxBorder.fromLTRB(
+                  top: BorderSide(
+                    color: colorScheme.outlineVariant.withAlpha(150),
+                  ),
+                ),
+              ),
+
               items: [
                 PersistentBottomNavBarItem(
                   icon: FaIcon(
@@ -94,7 +103,7 @@ class _MainScreenState extends State<MainScreen> {
               stateManagement: true, // Default is true.
               hideNavigationBarWhenKeyboardAppears: true,
               popBehaviorOnSelectedNavBarItemPress: PopBehavior.all,
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 15),
               backgroundColor: colorScheme.surface,
 
               animationSettings: const NavBarAnimationSettings(
