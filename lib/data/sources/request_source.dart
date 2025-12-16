@@ -1,5 +1,7 @@
+import 'package:anchor_point_app/data/models/request_model.dart';
 import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
 import 'package:anchor_point_app/presentations/screens/crafting_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseRequestSource {
@@ -19,9 +21,9 @@ class SupabaseRequestSource {
     final response = await supabase
         .from('requests')
         .select()
-        .eq('companion_id', userId)
+        .or('text_requester_id.eq.$userId,audio_requester_id.eq.$userId')
         .order('created_at');
-
+    debugPrint('req1');
     return response;
   }
 
@@ -38,20 +40,17 @@ class SupabaseRequestSource {
 
   Future<void> createRequest({
     required int anchorPointId,
-    required String type,
-    required CompanionType requestedFor,
-    required String? companionId,
+    required HalfRequestModel textRequest,
+    required HalfRequestModel audioRequest,
     required Map<String, dynamic> requestBody,
-    required String? message,
   }) async {
-    Map<String, dynamic> request = requestBody;
-    requestBody['type'] = type;
-    requestBody['requested_for'] = requestedFor.name;
     requestBody['anchor_point_id'] = anchorPointId;
-    if (requestedFor == CompanionType.companion) {
-      requestBody['companion_id'] = companionId;
-    }
-    requestBody['message'] = message;
+    requestBody['text_request'] = textRequest.toJson();
+    requestBody['audio_request'] = audioRequest.toJson();
+    requestBody['text_requester_id'] = textRequest.companionId;
+    requestBody['audio_requester_id'] = audioRequest.companionId;
+
+    Map<String, dynamic> request = requestBody;
 
     final result = await supabase
         .from('requests')
@@ -59,14 +58,9 @@ class SupabaseRequestSource {
         .select()
         .single();
     int requestId = result['id'];
-    if (type == 'text') {
-      await SupabaseAnchorPointSource().updateAnchorPoint(anchorPointId, {
-        'text_request_id': requestId,
-      });
-    } else if (type == 'audio') {
-      await SupabaseAnchorPointSource().updateAnchorPoint(anchorPointId, {
-        'audio_request_id': requestId,
-      });
-    }
+
+    await SupabaseAnchorPointSource().updateAnchorPoint(anchorPointId, {
+      'request_id': requestId,
+    });
   }
 }

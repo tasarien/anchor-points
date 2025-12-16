@@ -3,6 +3,7 @@ import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/person_invitation.dart';
+import 'package:anchor_point_app/data/models/request_model.dart';
 import 'package:anchor_point_app/data/models/user_profile.dart';
 import 'package:anchor_point_app/data/sources/request_source.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
@@ -952,31 +953,48 @@ class _SummaryCard extends StatelessWidget {
               action: (controller) async {
                 controller.loading();
 
+                String? textCompanionId = null;
+                String? audioCompanionId;
+
+                if (textProvider == CompanionType.companion &&
+                    textCompanion != null) {
+                  textCompanionId = textCompanion!.id;
+                }
+
+                HalfRequestModel textRequest = HalfRequestModel(
+                  type: RequestType.text,
+                  companionType: textProvider,
+                  status: RequestStatus.pending,
+                  createdAt: DateTime.now(),
+                  message: textMessageController.text ?? null,
+                  companionId: textCompanionId,
+                  invitationCode: textInvitation != null
+                      ? textInvitation!.token
+                      : null,
+                );
+
+                if (audioProvider == CompanionType.companion &&
+                    audioCompanion != null) {
+                  audioCompanionId = audioCompanion!.id;
+                }
+
+                HalfRequestModel audioRequest = HalfRequestModel(
+                  type: RequestType.audio,
+                  companionType: audioProvider,
+                  status: RequestStatus.created,
+                  createdAt: DateTime.now(),
+                  message: audioMessageController.text ?? null,
+                  companionId: audioCompanionId,
+                  invitationCode: audioInvitation != null
+                      ? audioInvitation!.token
+                      : null,
+                );
+
                 try {
                   SupabaseRequestSource().createRequest(
                     anchorPointId: anchorPoint.id,
-                    type: "text",
-                    requestedFor: textProvider,
-                    companionId: textCompanion?.id,
-                    message: needCombinedText
-                        ? combinedMessageController.text
-                        : textMessageController.text.isNotEmpty
-                        ? textMessageController.text
-                        : null,
-
-                    requestBody: {},
-                  );
-
-                  SupabaseRequestSource().createRequest(
-                    anchorPointId: anchorPoint.id,
-                    type: "audio",
-                    requestedFor: audioProvider,
-                    companionId: audioCompanion?.id,
-                    message: needCombinedText
-                        ? combinedMessageController.text
-                        : audioMessageController.text.isNotEmpty
-                        ? audioMessageController.text
-                        : null,
+                    textRequest: textRequest,
+                    audioRequest: audioRequest,
                     requestBody: {},
                   );
 

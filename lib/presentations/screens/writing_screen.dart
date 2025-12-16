@@ -1,9 +1,12 @@
 import 'package:action_slider/action_slider.dart';
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
+import 'package:anchor_point_app/data/models/request_model.dart';
 import 'package:anchor_point_app/data/models/segment_prompt_model.dart';
 import 'package:anchor_point_app/data/models/writing_state.dart';
 import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
+import 'package:anchor_point_app/data/sources/request_source.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
@@ -14,14 +17,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class WritingScreen extends StatefulWidget {
   final int anchorPointId;
-  final String supabaseBucket;
   final int minWordCount;
+  final RequestModel request;
 
   const WritingScreen({
     Key? key,
     required this.anchorPointId,
-    this.supabaseBucket = 'text-segments',
-    this.minWordCount = 50,
+    this.minWordCount = 5,
+    required this.request,
   }) : super(key: key);
 
   @override
@@ -307,6 +310,9 @@ class _WritingScreenState extends State<WritingScreen> {
       (sum, state) => sum + state.wordCount,
     );
 
+    DataProvider appData = context.watch<DataProvider>();
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -398,79 +404,56 @@ class _WritingScreenState extends State<WritingScreen> {
 
           const SizedBox(height: 40),
 
-          ActionSlider.standard(),
-
-          // Submit button
-          if (_canSubmit())
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitWritings,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _isSubmitting
-                    ? const LoadingIndicator()
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.send),
-                          const SizedBox(width: 8),
-                          Text(
-                            getText('submitPageSubmitButton'),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-            )
-          else
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Navigate back to first incomplete segment
-                  for (int i = 0; i < segments.length; i++) {
-                    if (!(_writingStates[i]?.isComplete ?? false)) {
-                      _pageController.animateToPage(
-                        i,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                      break;
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.edit),
-                    const SizedBox(width: 8),
-                    Text(
-                      getText('submitPageContinueButton'),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          ActionSlider.standard(
+            child: Text(getText("subit_ap_text")),
+            loadingIcon: CircularProgressIndicator(),
+            toggleColor: colorScheme.tertiary,
+            rolling: true,
+            icon: FaIcon(
+              AnchorPointIcons.anchor_point_step3,
+              color: colorScheme.onSurface,
+              size: 40,
             ),
+            successIcon: FaIcon(FontAwesomeIcons.check),
+            failureIcon: FaIcon(FontAwesomeIcons.xmark),
+            action: (controller) async {
+              controller.loading();
+
+              try {
+                List<String> segmentsText = _textControllers.values
+                    .map((controller) => controller.text)
+                    .toList();
+
+                await SupabaseAnchorPointSource().updateAnchorPoint(
+                  anchorPoint.id,
+                  {'segments_text': segmentsText},
+                );
+
+                await SupabaseRequestSource().updateRequest(widget.request.id, {
+                  'status': 'completed',
+                  'completed_at': DateTime.now().toIso8601String(),
+                });
+                // await SupabaseRequestSource().updateRequest(
+
+                // );
+                await appData.loadRequests();
+                controller.success();
+
+                await Future.delayed(Durations.extralong1);
+                Navigator.pop(context);
+                appData.changeTabVisibility(true);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(getText("success_in_saving_text"))),
+                );
+              } catch (e) {
+                controller.failure();
+                await Future.delayed(Durations.extralong1);
+
+                print(e.toString());
+              }
+            },
+          ),
         ],
       ),
     );
@@ -523,15 +506,24 @@ class _WritingScreenState extends State<WritingScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          getText('segmentWordCount'),
+                          widget.minWordCount.toString() +
+                              " " +
+                              getText('segmentWordCount'),
+
                           style: TextStyle(
                             color: isComplete ? Colors.green : Colors.grey,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                        SizedBox(width: 10),
                         if (!isComplete && state.wordCount > 0) ...[
                           Text(
-                            getText('segmentWordsNeeded'),
+                            "( " +
+                                wordsNeeded.toString() +
+                                " " +
+                                getText('segmentWordsNeeded') +
+                                " )",
+
                             style: TextStyle(
                               color: Colors.orange.shade700,
                               fontSize: 12,

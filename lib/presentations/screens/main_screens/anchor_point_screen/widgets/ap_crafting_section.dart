@@ -35,10 +35,7 @@ class ApCraftingSection extends StatelessWidget {
         step: 2,
         icon: AnchorPointIcons.anchor_point_step2,
         child: hasRequests
-            ? Column(
-                children: [
-                  RequestListTile(request: ap.textRequest!, anchorPoint: ap),
-                  RequestListTile(request: ap.audioRequest!, anchorPoint: ap),
+            ? Column(children: [
                 ],
               )
             : GestureDetector(

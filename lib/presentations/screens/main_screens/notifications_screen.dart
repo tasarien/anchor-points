@@ -5,6 +5,7 @@ import 'package:anchor_point_app/presentations/widgets/ap_request_tile.dart';
 import 'package:anchor_point_app/presentations/widgets/from%20models/request_list_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({Key? key}) : super(key: key);
@@ -37,7 +38,11 @@ class NotificationsScreen extends StatelessWidget {
                     itemCount: appData.requestsForUser.length,
                     itemBuilder: (context, index) {
                       RequestModel request = appData.requestsForUser[index];
-                      return RequestListTileNotifications(request: request);
+                      return RequestListTileNotifications(
+                        request: request,
+                        mode: RequestTileMode.forRequested,
+                        userId: Supabase.instance.client.auth.currentUser!.id,
+                      );
                     },
                   ),
                 ),

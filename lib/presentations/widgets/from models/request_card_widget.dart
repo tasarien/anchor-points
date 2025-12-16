@@ -7,14 +7,17 @@ import 'package:intl/intl.dart';
 
 class RequestCard extends StatelessWidget {
   final RequestModel request;
+  final RequestType requestType; // Specify which request to display
 
-  const RequestCard({super.key, required this.request});
+  const RequestCard({
+    super.key,
+    required this.request,
+    required this.requestType,
+  });
 
-  IconData _typeIcon(String type) {
-    return type == 'audio'
-        ? FontAwesomeIcons.microphone
-        : FontAwesomeIcons.pencil;
-  }
+  HalfRequestModel get _halfRequest => requestType == RequestType.text
+      ? request.textRequest
+      : request.audioRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -42,22 +45,23 @@ class RequestCard extends StatelessWidget {
             children: [
               WholeButton(
                 static: true,
-                icon: _typeIcon(request.type),
-                text: request.type,
+                icon: _halfRequest.typeIcon(),
+                text: requestType.name,
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: request.getStatusColor().withOpacity(0.15),
+                  color: _halfRequest.getStatusColor().withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  getText(request.getStatusLabel()),
+                  getText(_halfRequest.getStatusLabel()),
                   style: TextStyle(
-                    color: request.getStatusColor(),
+                    color: _halfRequest.getStatusColor(),
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -66,54 +70,68 @@ class RequestCard extends StatelessWidget {
             ],
           ),
           Wrap(
+            spacing: 4,
             children: [
               Text("You have requested "),
-              Text(request.companionUsername ?? "a companion"),
+              Text(_halfRequest.companionUsername ?? "a companion"),
               Text(" to prepare "),
-              Text(request.type == 'text' ? 'text' : 'audio'),
+              Text(requestType == RequestType.text ? 'text' : 'audio'),
               Text(" for this Anchor Point."),
             ],
           ),
 
           // Info rows
-          if (request.companionId != null)
+          if (_halfRequest.companionId != null)
             _infoRow(
               context: context,
               icon: FontAwesomeIcons.user,
               label: "Companion",
-              value: request.companionUsername!,
+              value: _halfRequest.companionUsername ?? "Unknown",
             ),
 
-          if (request.invitationCode != null)
+          if (_halfRequest.invitationCode != null)
             _infoRow(
               context: context,
               icon: FontAwesomeIcons.key,
               label: "Invitation Code",
-              value: request.invitationCode!,
+              value: _halfRequest.invitationCode!,
             ),
 
           _infoRow(
             context: context,
             icon: FontAwesomeIcons.clock,
             label: "Created",
-            value: DateFormat('yyyy-MM-dd – HH:mm').format(request.createdAt),
+            value: DateFormat(
+              'yyyy-MM-dd – HH:mm',
+            ).format(_halfRequest.createdAt),
           ),
 
-          if (request.completedAt != null)
+          if (_halfRequest.completedAt != null)
             _infoRow(
               context: context,
               icon: FontAwesomeIcons.check,
               label: "Completed",
-              value: DateFormat('yyyy-MM-dd').format(request.completedAt!),
+              value: DateFormat('yyyy-MM-dd').format(_halfRequest.completedAt!),
             ),
           // Message
-          if (request.message != null)
+          if (_halfRequest.message != null && _halfRequest.message!.isNotEmpty)
             Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    FaIcon(FontAwesomeIcons.message),
-                    Text("Your message for invited person: "),
+                    FaIcon(
+                      FontAwesomeIcons.message,
+                      size: 16,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Your message for invited person: ",
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
                 Padding(
@@ -122,14 +140,14 @@ class RequestCard extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                      color: colorScheme.surfaceContainerHighest.withOpacity(
+                        0.5,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: colorScheme.secondary),
                     ),
                     child: Text(
-                      request.message!,
+                      _halfRequest.message!,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),

@@ -29,6 +29,16 @@
   "auth_password_not_match": "Passwords do not match.",
   "auth_forgot_password": "Forgot Password?",
   "auth_sign_in_with": "Sign in with",
+  "auth_invalid_credentials": "Invalid email or password",
+  "auth_wrong_password": "Incorrect password",
+  "auth_user_not_found": "No account found with this email",
+  "auth_email_not_confirmed": "Please confirm your email before signing in",
+  "auth_invalid_email" : "This is not proper email format.",
+  "auth_email_already_in_use": "An account already exists with this email",
+  "auth_signup_disabled": "Sign up is currently disabled",
+  "auth_too_many_requests": "Too many attempts. Please try again later",
+  "auth_weak_password": "Password is too weak. Try something stronger",
+
   "title_field_description" : "Think about give a title of new Anchor Point. It can be simple. You can change it later.",
   "description_field_description" : "There You can elaborate more, about what your Anchor Point actually is. You can definetely think about it later.",
   "other_ap_screen_title" : "All your Anchor Points",
@@ -164,13 +174,13 @@
   "dialogClearContent": "Are you sure you want to clear all text for this segment?",
   "dialogClearActionCancel": "Cancel",
   "dialogClearActionClear": "Clear",
-  "segmentWordCount": "{count} words",
-  "segmentWordsNeeded": " ({needed} more needed)",
+  "segmentWordCount": "words",
+  "segmentWordsNeeded": "more needed",
   "promptCardTitle": "Writing Prompt",
   "textFieldTitle": "Your Writing",
   "textFieldClearButton": "Clear",
   "textFieldHint": "Start writing here...",
-  "progressMinRequired": "Minimum {minWordCount} words required",
+  "progressMinRequired": "Minimum 5 words required",
   "progressComplete": "Complete! Great work!",
   "writing_screen_title" : "Text of Anchor Point",
   "segments" : "Segments",
@@ -186,13 +196,23 @@
 
   "request_from" : "Request from:",
   "request_message_label" : "Message for this request:",
+  "request_completed_at" : "Completed ",
 
   "request_type_created" : "created",
 "request_type_pending" : "pending",
 "request_type_declined" : "declined",
 "request_type_completed" : "completed",
 
-"created_info" : "This request will be available, when according text request will be completed."
+"created_info" : "This request will be available, when according text request will be completed.",
+"submit_ap_text" : "Submit all segments",
+"success_in_saving_text" : "Texts for all segments was sent."
+
+
+
+  
+
+
+
 
 }
 

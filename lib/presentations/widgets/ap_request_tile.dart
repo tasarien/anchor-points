@@ -12,6 +12,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class RequestListTile extends StatelessWidget {
   final RequestModel request;
+  final RequestType requestType; // Specify which request to display
   final AnchorPoint anchorPoint;
   final String? companionUsername;
   final String? inviteeName;
@@ -20,20 +21,27 @@ class RequestListTile extends StatelessWidget {
   const RequestListTile({
     Key? key,
     required this.request,
+    required this.requestType,
     required this.anchorPoint,
     this.companionUsername,
     this.inviteeName,
     this.onTap,
   }) : super(key: key);
 
+  HalfRequestModel get _halfRequest => requestType == RequestType.text
+      ? request.textRequest
+      : request.audioRequest;
+
   void handleTap(BuildContext context) async {
-    switch (request.requestedFor) {
+    switch (_halfRequest.companionType) {
       case CompanionType.you:
-        request.type == 'text'
+        requestType == RequestType.text
             ? Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) =>
-                      WritingScreen(anchorPointId: anchorPoint.id),
+                  builder: (context) => WritingScreen(
+                    anchorPointId: anchorPoint.id,
+                    request: request,
+                  ),
                 ),
               )
             : Navigator.of(context).push(
@@ -42,25 +50,28 @@ class RequestListTile extends StatelessWidget {
                       AudioRecorderScreen(anchorPointId: anchorPoint.id),
                 ),
               );
-
         break;
       case CompanionType.companion:
         showRequestDialog(context);
+        break;
+      case CompanionType.ai:
+        // Handle AI companion case if needed
+        break;
       default:
         break;
     }
   }
 
   showRequestDialog(BuildContext context) async {
-    debugPrint(request.companionUsername.toString());
-    await request.getUserName();
-    debugPrint(request.companionUsername.toString());
+    debugPrint(_halfRequest.companionUsername.toString());
+    await _halfRequest.getUserName();
+    debugPrint(_halfRequest.companionUsername.toString());
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Request details'),
-          content: RequestCard(request: request),
+          content: RequestCard(request: request, requestType: requestType),
           actions: [
             TextButton(
               onPressed: () {
@@ -74,14 +85,8 @@ class RequestListTile extends StatelessWidget {
     );
   }
 
-  IconData _getTypeIcon() {
-    return request.type == 'text'
-        ? FontAwesomeIcons.pencil
-        : FontAwesomeIcons.microphone;
-  }
-
   IconData _getRequestedForIcon() {
-    switch (request.requestedFor) {
+    switch (_halfRequest.companionType) {
       case CompanionType.you:
         return FontAwesomeIcons.user;
       case CompanionType.companion:
@@ -94,7 +99,7 @@ class RequestListTile extends StatelessWidget {
   }
 
   String _getRequestedForLabel() {
-    if (request.requestedFor == CompanionType.companion) {
+    if (_halfRequest.companionType == CompanionType.companion) {
       if (companionUsername != null) {
         return companionUsername!;
       } else if (inviteeName != null) {
@@ -102,16 +107,16 @@ class RequestListTile extends StatelessWidget {
       }
       return 'Companion';
     }
-    return request.requestedFor.name;
+    return _halfRequest.companionType.name;
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final typeColor = request.type == 'text'
+    final typeColor = requestType == RequestType.text
         ? colorScheme.primaryContainer
         : colorScheme.secondaryContainer;
-    final onTypeColor = request.type == 'text'
+    final onTypeColor = requestType == RequestType.text
         ? colorScheme.onPrimaryContainer
         : colorScheme.onSecondaryContainer;
 
@@ -140,9 +145,9 @@ class RequestListTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         // Type Icon (Text/Audio)
         leading: WholeButton(
-          icon: _getTypeIcon(),
+          icon: _halfRequest.typeIcon(),
           static: true,
-          text: request.type == 'text'
+          text: requestType == RequestType.text
               ? getText('text_request')
               : getText('audio_request'),
         ),
@@ -176,24 +181,34 @@ class RequestListTile extends StatelessWidget {
             ),
           ],
         ),
-        subtitle: // Status Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: request.getStatusColor().withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: request.getStatusColor().withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Text(
-            getText(request.getStatusLabel()),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: request.getStatusColor(),
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-            ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Row(
+            children: [
+              // Status Badge
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: _halfRequest.getStatusColor().withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _halfRequest.getStatusColor().withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  getText(_halfRequest.getStatusLabel()),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: _halfRequest.getStatusColor(),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
 

@@ -1,4 +1,5 @@
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
+import 'package:anchor_point_app/presentations/screens/auth_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -32,17 +33,11 @@ class AuthProvider extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    try {
-      final res = await supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-      user = res.user;
-    } on AuthException catch (e) {
-      errorMessage = e.message;
-    } catch (e) {
-      errorMessage = 'Unexpected error: $e';
-    }
+    final res = await supabase.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    user = res.user;
 
     isLoading = false;
     notifyListeners();
@@ -53,14 +48,8 @@ class AuthProvider extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    try {
-      final res = await supabase.auth.signUp(email: email, password: password);
-      user = res.user;
-    } on AuthException catch (e) {
-      errorMessage = e.message;
-    } catch (e) {
-      errorMessage = 'Unexpected error: $e';
-    }
+    final res = await supabase.auth.signUp(email: email, password: password);
+    user = res.user;
 
     isLoading = false;
     notifyListeners();
@@ -70,6 +59,10 @@ class AuthProvider extends ChangeNotifier {
     await Supabase.instance.client.auth.signOut();
     DataProvider appData = Provider.of<DataProvider>(context, listen: false);
     appData.clearData();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => AuthScreen()),
+    );
   }
 
   Future<void> resetPassword(String email) async {
@@ -77,18 +70,11 @@ class AuthProvider extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    try {
-      await supabase.auth.resetPasswordForEmail(email);
-    } on AuthException catch (e) {
-      errorMessage = e.message;
-    } catch (e) {
-      errorMessage = 'Unexpected error: $e';
-    }
+    await supabase.auth.resetPasswordForEmail(email);
 
     isLoading = false;
     notifyListeners();
   }
 
-  
   bool get isAuthenticated => user != null;
 }

@@ -24,6 +24,10 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _confirmPasswordFocus = FocusNode();
+
   bool _isSignIn = true;
   bool _isLoading = false;
   String? _errorMessage;
@@ -33,6 +37,9 @@ class _AuthScreenState extends State<AuthScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmPasswordFocus.dispose();
     super.dispose();
   }
 
@@ -69,11 +76,13 @@ class _AuthScreenState extends State<AuthScreen> {
         }
       }
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message ?? getText('auth_uknown_error'));
-    } catch (e) {
-      setState(() => _errorMessage = getText('auth_uknown_error'));
-    } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _errorMessage = _mapAuthError(e, context);
+        _isLoading = false;
+      });
+
+      // UX: focus password on wrong credentials
+      FocusScope.of(context).requestFocus(_passwordFocus);
     }
   }
 
@@ -151,6 +160,8 @@ class _AuthScreenState extends State<AuthScreen> {
                               setState(() {
                                 _isSignIn = true;
                                 _errorMessage = null;
+                                _passwordController.clear();
+                                _confirmPasswordController.clear();
                               });
                             },
                             wide: true,
@@ -165,6 +176,8 @@ class _AuthScreenState extends State<AuthScreen> {
                               setState(() {
                                 _isSignIn = false;
                                 _errorMessage = null;
+                                _passwordController.clear();
+                                _confirmPasswordController.clear();
                               });
                             },
                             wide: true,
@@ -185,9 +198,14 @@ class _AuthScreenState extends State<AuthScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
+                        // Error indicator
                         if (_errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Text(
                               _errorMessage!,
                               style: const TextStyle(color: Colors.red),
@@ -197,28 +215,56 @@ class _AuthScreenState extends State<AuthScreen> {
                         // Email
                         TextFormField(
                           controller: _emailController,
+                          focusNode: _emailFocus,
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted: (_) {
+                            FocusScope.of(context).requestFocus(_passwordFocus);
+                          },
+                          autofillHints: const [AutofillHints.email],
                           decoration: InputDecoration(
                             labelText: getText('auth_email'),
                             prefixIcon: _icon(FontAwesomeIcons.envelope),
                           ),
                           keyboardType: TextInputType.emailAddress,
-                          validator: (value) => value == null || value.isEmpty
-                              ? getText('auth_enter_email')
-                              : null,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return getText('auth_enter_email');
+                            }
+                            if (!value.contains('@')) {
+                              return getText('auth_invalid_email');
+                            }
+                            return null;
+                          },
                         ),
+
                         const SizedBox(height: 16),
 
                         // Password
                         TextFormField(
                           controller: _passwordController,
+                          focusNode: _passwordFocus,
+                          textInputAction: _isSignIn
+                              ? TextInputAction.done
+                              : TextInputAction.next,
+                          onFieldSubmitted: (_) {
+                            if (_isSignIn) {
+                              _handleAuth(context);
+                            } else {
+                              FocusScope.of(
+                                context,
+                              ).requestFocus(_confirmPasswordFocus);
+                            }
+                          },
+                          autofillHints: const [AutofillHints.password],
                           decoration: InputDecoration(
                             labelText: getText('auth_password'),
                             prefixIcon: _icon(FontAwesomeIcons.lock),
                           ),
                           obscureText: true,
                           validator: (value) {
-                            if (value == null || value.isEmpty)
+                            if (value == null || value.isEmpty) {
                               return getText('auth_enter_password');
+                            }
                             if (!_isSignIn && value.length < 6) {
                               return getText('auth_password_six_char');
                             }
@@ -228,19 +274,24 @@ class _AuthScreenState extends State<AuthScreen> {
 
                         // Confirm Password (Sign Up only)
                         if (!_isSignIn) ...[
-                          const SizedBox(height: 16),
+                          SizedBox(height: 10),
                           TextFormField(
                             controller: _confirmPasswordController,
+                            focusNode: _confirmPasswordFocus,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _handleAuth(context),
                             decoration: InputDecoration(
                               labelText: getText('auth_confirm_password'),
                               prefixIcon: _icon(FontAwesomeIcons.lock),
                             ),
                             obscureText: true,
                             validator: (value) {
-                              if (value == null || value.isEmpty)
+                              if (value == null || value.isEmpty) {
                                 return getText('auth_please_confirm_password');
-                              if (value != _passwordController.text)
+                              }
+                              if (value != _passwordController.text) {
                                 return getText('auth_password_not_match');
+                              }
                               return null;
                             },
                           ),
@@ -257,7 +308,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                 icon: FontAwesomeIcons.arrowRightFromBracket,
                                 onPressed: _isLoading
                                     ? null
-                                    : () => _handleAuth(context),
+                                    : () {
+                                        FocusScope.of(context).unfocus();
+                                        _handleAuth(context);
+                                      },
                                 text: _isSignIn
                                     ? getText('auth_sign_in')
                                     : getText('auth_sign_up'),
@@ -276,7 +330,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                     child: Text(getText('auth_forgot_password')),
                   ),
-               
               ],
             ),
           ),
@@ -291,5 +344,47 @@ class _AuthScreenState extends State<AuthScreen> {
       width: 50,
       child: Center(child: FaIcon(icon, color: AppColors.sageGreen)),
     );
+  }
+
+  String _mapAuthError(AuthException e, BuildContext context) {
+    String t(String k) => AppLocalizations.of(context).translate(k);
+
+    final msg = e.message.toLowerCase();
+
+    if (msg.contains('invalid login credentials')) {
+      return t('auth_invalid_credentials');
+    }
+    if (msg.contains('email not confirmed')) {
+      return t('auth_email_not_confirmed');
+    }
+    if (msg.contains('user not found')) {
+      return t('auth_user_not_found');
+    }
+    if (msg.contains('password')) {
+      return t('auth_wrong_password');
+    }
+
+    if (msg.contains('user already registered') ||
+        msg.contains('already exists')) {
+      return t('auth_email_already_in_use');
+    }
+
+    if (msg.contains('signup is disabled')) {
+      return t('auth_signup_disabled');
+    }
+
+    if (msg.contains('rate limit')) {
+      return t('auth_too_many_requests');
+    }
+
+    if (msg.contains('weak password') || msg.contains('password should be')) {
+      return t('auth_weak_password');
+    }
+
+    if (msg.contains('invalid email')) {
+      return t('auth_invalid_email');
+    }
+
+    return t('auth_uknown_error');
   }
 }

@@ -42,7 +42,9 @@ class DataProvider extends ChangeNotifier {
       await loadOwnedAnchorPoints();
       await loadUserInfo();
       await pickFirstAnchorPoint();
+      debugPrint("req");
       await loadRequests();
+      debugPrint("req1");
     } catch (e) {
       _error = 'Failed to load data: $e';
       debugPrint('Error loading all data: $e');
@@ -120,7 +122,11 @@ class DataProvider extends ChangeNotifier {
     );
 
     requests = response.map((json) => RequestModel.fromJson(json)).toList();
-    requests.forEach((request) => request.getUserName());
+    requests.forEach((request) {
+      request.getRequesterAndAnchorPoint();
+      request.textRequest.getUserName();
+      request.audioRequest.getUserName();
+    });
     _requestsForUser = requests;
 
     notifyListeners();
