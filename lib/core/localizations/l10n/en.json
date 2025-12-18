@@ -198,7 +198,7 @@
   "request_message_label" : "Message for this request:",
   "request_completed_at" : "Completed ",
 
-  "request_type_created" : "created",
+  "request_type_waiting" : "waiting",
 "request_type_pending" : "pending",
 "request_type_declined" : "declined",
 "request_type_completed" : "completed",

@@ -3,32 +3,31 @@ import 'dart:typed_data';
 
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
+import 'package:anchor_point_app/data/models/final_ap_segment.dart';
 import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
+import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
+import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:audio_waveforms/audio_waveforms.dart' as waveforms;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-
-import 'package:anchor_point_app/data/models/final_ap_segment.dart';
-import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
-import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 
 class AudioRecorderScreen extends StatefulWidget {
   final int anchorPointId;
   final String supabaseBucket;
 
   const AudioRecorderScreen({
-    Key? key,
+    super.key,
     required this.anchorPointId,
     this.supabaseBucket = 'audio-recordings',
-  }) : super(key: key);
+  });
 
   @override
   State<AudioRecorderScreen> createState() => _AudioRecorderScreenState();
@@ -40,690 +39,267 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
 
   late AnchorPoint anchorPoint;
   List<FinalAPSegment> segments = [];
+  List<SegmentDataLocal> _segmentsLocal = [];
 
   waveforms.RecorderController? _recorderController;
 
-  List<SegmentDataLocal> _segmentsLocal = [];
+  bool _isLoading = true;
   bool _isRecorderReady = false;
   bool _isRecording = false;
-  bool _isLoading = true;
-  bool _loadingAp = false;
-  int _currentSegmentIndex = 0;
   bool _isUploading = false;
 
-  // upload visuals
-  double _uploadProgress = 0.0;
+  int _currentPage = 0;
+
+  double _uploadProgress = 0;
   String _uploadStatusMessage = '';
+
+  // ---------- Page helpers (MATCHES WritingScreen) ----------
+
+  bool get _isSegmentPage =>
+      _currentPage > 0 && _currentPage <= _segmentsLocal.length;
+
+  int get _segmentIndex => _currentPage - 1;
+
+  bool get _isSubmitPage => _currentPage == _segmentsLocal.length + 1;
+
+  bool get _canSubmit => _segmentsLocal.every((s) => s.audioPath != null);
+
+  int get _completedCount =>
+      _segmentsLocal.where((s) => s.audioPath != null).length;
+
+  // ----------------------------------------------------------
 
   @override
   void initState() {
     super.initState();
-    _initializeFromWidgetSegments();
-    _checkPermissionAndPrepare();
+    _initialize();
   }
 
   @override
   void dispose() {
-    _recorderController?.dispose();
     _pageController.dispose();
-    for (var seg in _segmentsLocal) {
+    _recorderController?.dispose();
+    for (final seg in _segmentsLocal) {
       seg.playerController?.dispose();
     }
     super.dispose();
   }
 
-  Future<void> _fetchAnchorPoint() async {
-    setState(() {
-      _loadingAp = true;
-    });
+  Future<void> _initialize() async {
+    await _fetchAnchorPoint();
+    await _checkPermissions();
+    setState(() => _isLoading = false);
+  }
 
-    final AnchorPoint ap = await AnchorPoint.fromJsonAsync(
+  Future<void> _fetchAnchorPoint() async {
+    final ap = await AnchorPoint.fromJsonAsync(
       await SupabaseAnchorPointSource().getAnchorPoint(widget.anchorPointId),
     );
 
     setState(() {
       anchorPoint = ap;
       segments = ap.finalSegments ?? [];
-      _loadingAp = false;
+      _segmentsLocal = segments.map((s) {
+        return SegmentDataLocal(
+          id: _uuid.v4(),
+          original: s,
+          text: s.text ?? 'No text provided',
+        );
+      }).toList();
     });
   }
 
-  void _initializeFromWidgetSegments() async {
-    await _fetchAnchorPoint();
+  Future<void> _checkPermissions() async {
+    final mic = await Permission.microphone.request();
+    if (!mic.isGranted) return;
 
-    _segmentsLocal = segments.map((s) {
-      final text = (s.text != null && s.text!.isNotEmpty)
-          ? s.text!
-          : "No text provided";
-      return SegmentDataLocal(id: _uuid.v4(), original: s, text: text);
-    }).toList();
-  }
-
-  Future<void> _checkPermissionAndPrepare() async {
-    setState(() => _isLoading = true);
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) {
-      _showError('Microphone permission is required to record.');
-      setState(() => _isLoading = false);
-      return;
+    if (Platform.isAndroid) {
+      await Permission.storage.request();
     }
-    _isRecorderReady = true;
-    setState(() => _isLoading = false);
+
+    setState(() => _isRecorderReady = true);
   }
+
+  // ---------- Recording ----------
 
   Future<String> _tempFilePath() async {
     final dir = await getApplicationDocumentsDirectory();
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    return '${dir.path}/rec_${_uuid.v4()}_$ts.mp3';
+    return '${dir.path}/${_uuid.v4()}.m4a';
   }
 
   Future<void> _startRecording() async {
-    if (!_isRecorderReady || _isRecording) return;
-    final current = _segmentsLocal[_currentSegmentIndex];
+    if (!_isSegmentPage || !_isRecorderReady) return;
 
-    _deleteRecordingInternal(_currentSegmentIndex, deleteFile: true);
-    current.isPlayerPrepared = false;
+    final seg = _segmentsLocal[_segmentIndex];
+    _deleteRecordingInternal(seg);
 
+    _recorderController?.dispose();
     _recorderController = waveforms.RecorderController();
 
     final path = await _tempFilePath();
-    try {
-      await _recorderController!.record(path: path);
-      setState(() {
-        _isRecording = true;
-      });
-    } catch (e) {
-      _showError('Error starting recording: $e');
-      _recorderController?.dispose();
-      _recorderController = null;
-    }
+    await _recorderController!.record(path: path);
+
+    setState(() => _isRecording = true);
   }
 
   Future<void> _stopRecording() async {
-    if (!_isRecording || _recorderController == null) return;
-    final current = _segmentsLocal[_currentSegmentIndex];
-    try {
-      final recordedPath = await _recorderController!.stop();
-      _recorderController!.dispose();
-      _recorderController = null;
+    if (!_isRecording || !_isSegmentPage) return;
 
-      if (recordedPath != null && recordedPath.isNotEmpty) {
-        final file = File(recordedPath);
-        if (await file.exists() && await file.length() > 100) {
-          current.audioPath = recordedPath;
-          await _preparePlayerController(_currentSegmentIndex);
-        } else {
-          _showError(
-            'Failed to save recording for ${current.original.segmentData.name}',
-          );
-        }
-      } else {
-        _showError('Failed to finalize recording.');
-      }
-    } catch (e) {
-      _showError('Error stopping recording: $e');
-    } finally {
-      if (mounted) setState(() => _isRecording = false);
-    }
-  }
+    final path = await _recorderController!.stop();
+    _recorderController?.dispose();
+    _recorderController = null;
 
-  Future<void> _preparePlayerController(int index) async {
-    final seg = _segmentsLocal[index];
-    final path = seg.audioPath;
     if (path == null) return;
 
+    final seg = _segmentsLocal[_segmentIndex];
+    seg.audioPath = path;
+    await _preparePlayer(seg);
+
+    setState(() => _isRecording = false);
+  }
+
+  Future<void> _preparePlayer(SegmentDataLocal seg) async {
     seg.playerController?.dispose();
     seg.playerController = waveforms.PlayerController();
-    seg.isPlayerPrepared = false;
-    if (mounted) setState(() {});
 
-    try {
-      final player = seg.playerController!;
-      await player.preparePlayer(
-        path: path,
-        shouldExtractWaveform: true,
-        noOfSamples: 100,
-        volume: 1.0,
-      );
-      seg.isPlayerPrepared = true;
+    await seg.playerController!.preparePlayer(
+      path: seg.audioPath!,
+      shouldExtractWaveform: true,
+    );
 
-      player.onPlayerStateChanged.listen((state) {
-        if (mounted) {
-          setState(() {
-            seg.isPlaying = state == waveforms.PlayerState.playing;
-          });
-        }
+    seg.playerController!.onPlayerStateChanged.listen((state) {
+      setState(() {
+        seg.isPlaying = state == waveforms.PlayerState.playing;
       });
-    } catch (e) {
-      _showError(
-        'Error preparing playback for ${seg.original.segmentData.name}: $e',
-      );
-      seg.playerController = null;
-    }
-    if (mounted) setState(() {});
+    });
   }
 
-  Future<void> _togglePlayPause() async {
-    final seg = _segmentsLocal[_currentSegmentIndex];
-    final player = seg.playerController;
-    if (player == null || !seg.isPlayerPrepared) return;
-
-    if (player.playerState == waveforms.PlayerState.playing) {
-      await player.pausePlayer();
-    } else {
-      await player.startPlayer();
-    }
-  }
-
-  void _deleteRecordingInternal(int index, {bool deleteFile = true}) {
-    final seg = _segmentsLocal[index];
+  void _deleteRecordingInternal(SegmentDataLocal seg) {
     seg.playerController?.dispose();
     seg.playerController = null;
-    seg.isPlayerPrepared = false;
-    seg.isPlaying = false;
-    if (deleteFile && seg.audioPath != null) {
-      try {
-        final file = File(seg.audioPath!);
-        if (file.existsSync()) file.deleteSync();
-      } catch (e) {
-        debugPrint('Error deleting file: $e');
-      }
+
+    if (seg.audioPath != null) {
+      File(seg.audioPath!).deleteSync();
+      seg.audioPath = null;
     }
-    seg.audioPath = null;
   }
 
-  void _deleteRecording() {
-    _deleteRecordingInternal(_currentSegmentIndex, deleteFile: true);
-    if (mounted) setState(() {});
-  }
+  // ---------- Upload ----------
 
-  bool get _canSubmit {
-    return _segmentsLocal.every(
-      (s) => s.audioPath != null && s.audioPath!.isNotEmpty,
-    );
-  }
-
-  int get _completedCount {
-    return _segmentsLocal
-        .where((s) => s.audioPath != null && s.audioPath!.isNotEmpty)
-        .length;
-  }
-
-  Future<void> _submitRecordings() async {
-    if (!_canSubmit || _isUploading) return;
+  Future<void> _submit() async {
+    if (!_canSubmit) return;
 
     setState(() {
       _isUploading = true;
-      _uploadProgress = 0.0;
-      _uploadStatusMessage = 'Preparing upload...';
+      _uploadProgress = 0;
     });
 
-    final supabase = Supabase.instance.client;
-    final currentUser = supabase.auth.currentUser;
-    if (currentUser == null) {
-      _showError('User not authenticated.');
-      setState(() => _isUploading = false);
-      return;
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser!;
+    final ts = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+
+    for (int i = 0; i < _segmentsLocal.length; i++) {
+      final seg = _segmentsLocal[i];
+      final bytes = await File(seg.audioPath!).readAsBytes();
+
+      await client.storage
+          .from(widget.supabaseBucket)
+          .uploadBinary('${user.id}/$ts-$i.m4a', bytes);
+
+      setState(() => _uploadProgress = (i + 1) / _segmentsLocal.length);
     }
 
-    try {
-      final List<String> audioUrls = [];
-      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-
-      for (int i = 0; i < _segmentsLocal.length; i++) {
-        final seg = _segmentsLocal[i];
-        final audioFile = File(seg.audioPath!);
-        final fileName = '${timestamp}_segment_${i + 1}.mp3';
-        final storagePath = '${currentUser.id}/$fileName';
-
-        setState(() {
-          _uploadStatusMessage =
-              'Uploading segment ${i + 1} of ${_segmentsLocal.length}...';
-          _uploadProgress = (i / _segmentsLocal.length);
-        });
-
-        final Uint8List bytes = await audioFile.readAsBytes();
-
-        await supabase.storage
-            .from(widget.supabaseBucket)
-            .uploadBinary(storagePath, bytes);
-
-        final publicUrl = supabase.storage
-            .from(widget.supabaseBucket)
-            .getPublicUrl(storagePath);
-        audioUrls.add(publicUrl);
-      }
-
-      setState(() {
-        _uploadStatusMessage = 'Finalizing...';
-        _uploadProgress = 1.0;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('All recordings uploaded successfully!'),
-          ),
-        );
-        Navigator.of(context).pop(audioUrls);
-      }
-    } catch (e) {
-      _showError('Failed to upload recordings: $e');
-    } finally {
-      if (mounted)
-        setState(() {
-          _isUploading = false;
-          _uploadProgress = 0.0;
-          _uploadStatusMessage = '';
-        });
-    }
+    Navigator.pop(context, true);
   }
 
-  void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
-    }
-  }
+  // ---------- UI ----------
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    String getText(text) {
-      return AppLocalizations.of(context).translate(text);
-    }
+    final t = AppLocalizations.of(context).translate;
 
-    DataProvider appData = context.watch<DataProvider>();
+    if (_isLoading) {
+      return const Scaffold(body: LoadingIndicator());
+    }
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          spacing: 20,
-          children: [
-            IconButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await Future.delayed(Duration(milliseconds: 300));
-                appData.changeTabVisibility(true);
-              },
-              icon: FaIcon(FontAwesomeIcons.chevronLeft, size: 18),
-            ),
-            Text(getText("record_screen_title")),
-          ],
-        ),
+        title: Text(t('record_screen_title')),
         actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                '$_completedCount/${_segmentsLocal.length}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('$_completedCount/${_segmentsLocal.length}'),
           ),
         ],
       ),
-      body: _loadingAp
-          ? Center(child: LoadingIndicator())
-          : Column(
-              children: [
-                // page indicators with arrow for submit page
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_segmentsLocal.length + 1, (index) {
-                      if (index == _segmentsLocal.length) {
-                        // Submit page arrow
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          child: FaIcon(
-                            FontAwesomeIcons.arrowRight,
-                            size: 12,
-                            color: _currentSegmentIndex == index
-                                ? colorScheme.onSurface
-                                : _canSubmit
-                                ? colorScheme.secondary
-                                : colorScheme.primary.withOpacity(0.3),
-                          ),
-                        );
-                      } else {
-                        // Segment circles
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _segmentsLocal[index].audioPath != null
-                                ? colorScheme.secondary
-                                : index == _currentSegmentIndex
-                                ? colorScheme.onSurface
-                                : colorScheme.tertiary,
-                          ),
-                        );
-                      }
-                    }),
-                  ),
-                ),
-
-                // page view
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _segmentsLocal.length + 1, // +1 for submit page
-                    physics: _isRecording || _isUploading
-                        ? const NeverScrollableScrollPhysics()
-                        : const AlwaysScrollableScrollPhysics(),
-                    onPageChanged: (index) async {
-                      if (_isRecording) {
-                        await _stopRecording();
-                      }
-                      setState(() => _currentSegmentIndex = index);
-                    },
-                    itemBuilder: (context, index) {
-                      if (index == _segmentsLocal.length) {
-                        return _buildSubmitPage();
-                      }
-                      return _buildSegmentPage(index);
-                    },
-                  ),
-                ),
-
-                // controls - only show for recording pages, not submit page
-                if (_currentSegmentIndex < _segmentsLocal.length)
-                  _buildRecordingControls(),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildSubmitPage() {
-    String getText(text) {
-      return AppLocalizations.of(context).translate(text);
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      body: Column(
         children: [
-          const SizedBox(height: 40),
-
-          // Completion icon
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _canSubmit
-                  ? Colors.green.withOpacity(0.1)
-                  : Colors.orange.withOpacity(0.1),
-            ),
-            child: Icon(
-              _canSubmit ? Icons.check_circle : Icons.pending,
-              size: 60,
-              color: _canSubmit ? Colors.green : Colors.orange,
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Title
-          Text(
-            _canSubmit ? 'Ready to Submit' : 'Almost There!',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Description
-          Text(
-            _canSubmit
-                ? 'All segments have been recorded. Review your recordings and submit when ready.'
-                : 'Please complete all audio recordings before submitting.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 40),
-
-          // Summary card
-          Card(
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Recording Summary',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSummaryRow(
-                    Icons.mic,
-                    'Total Segments',
-                    '${_segmentsLocal.length}',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSummaryRow(
-                    Icons.check_circle,
-                    'Recordings Completed',
-                    '$_completedCount/${_segmentsLocal.length}',
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 16),
-
-                  // List of segments with status
-                  ...List.generate(_segmentsLocal.length, (index) {
-                    final seg = _segmentsLocal[index];
-                    final hasRecording = seg.audioPath != null;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          Icon(
-                            hasRecording
-                                ? Icons.check_circle
-                                : Icons.radio_button_unchecked,
-                            color: hasRecording ? Colors.green : Colors.grey,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              seg.original.segmentData.name,
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: hasRecording
-                                    ? Colors.black87
-                                    : Colors.grey,
-                              ),
-                            ),
-                          ),
-                          if (!hasRecording)
-                            TextButton(
-                              onPressed: () {
-                                _pageController.animateToPage(
-                                  index,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
-                              child: const Text('Record'),
-                            ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-              ),
+          // Indicators (MATCHES WritingScreen)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 5,
+              children: List.generate(_segmentsLocal.length + 2, (i) {
+                if (i == 0) {
+                  return Icon(
+                    FontAwesomeIcons.circle,
+                    color: _currentPage == 0
+                        ? colorScheme.onSurface
+                        : colorScheme.tertiary,
+                    size: 12,
+                  );
+                } else if (i == _segmentsLocal.length + 1) {
+                  return Icon(
+                    FontAwesomeIcons.paperPlane,
+                    color: _currentPage == i
+                        ? colorScheme.onSurface
+                        : colorScheme.tertiary,
+                    size: 12,
+                  );
+                } else {
+                  final seg = _segmentsLocal[i - 1];
+                  return Icon(
+                    seg.audioPath != null
+                        ? FontAwesomeIcons.solidSquare
+                        : FontAwesomeIcons.square,
+                    color: _currentPage == i
+                        ? colorScheme.onSurface
+                        : seg.audioPath != null
+                        ? colorScheme.secondary
+                        : colorScheme.primary,
+                  );
+                }
+              }),
             ),
           ),
 
-          const SizedBox(height: 40),
-
-          // Action buttons
-          if (_isUploading) ...[
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      _uploadStatusMessage,
-                      style: const TextStyle(fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: _uploadProgress,
-                      minHeight: 6,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ],
-                ),
-              ),
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: _segmentsLocal.length + 2,
+              onPageChanged: (i) async {
+                if (_isRecording) await _stopRecording();
+                setState(() => _currentPage = i);
+              },
+              itemBuilder: (_, i) {
+                if (i == 0) return const SizedBox();
+                if (i == _segmentsLocal.length + 1) {
+                  return _buildSubmitPage();
+                }
+                return _buildSegmentPage(_segmentsLocal[i - 1]);
+              },
             ),
-          ] else ...[
-            if (_canSubmit)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _submitRecordings,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.cloud_upload),
-                      SizedBox(width: 8),
-                      Text(
-                        'Submit All Recordings',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Navigate to first incomplete segment
-                    for (int i = 0; i < _segmentsLocal.length; i++) {
-                      if (_segmentsLocal[i].audioPath == null) {
-                        _pageController.animateToPage(
-                          i,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                        break;
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.mic),
-                      SizedBox(width: 8),
-                      Text(
-                        'Continue Recording',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-            const SizedBox(height: 12),
-
-            // Back button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  if (_currentSegmentIndex > 0) {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  }
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Back to Recordings',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
-          ],
+          ),
         ],
       ),
+      bottomNavigationBar: _isSegmentPage ? _buildControls() : null,
     );
   }
 
-  Widget _buildSummaryRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Theme.of(context).colorScheme.secondary),
-        const SizedBox(width: 12),
-        Expanded(child: Text(label, style: const TextStyle(fontSize: 16))),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSegmentPage(int index) {
-    final seg = _segmentsLocal[index];
-    final hasRecording = seg.audioPath != null && seg.audioPath!.isNotEmpty;
-    final isCurrent = index == _currentSegmentIndex;
-
-    return SingleChildScrollView(
+  Widget _buildSegmentPage(SegmentDataLocal seg) {
+    return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,243 +308,85 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
             children: [
               WholeSymbol(symbol: seg.original.segmentData.symbol),
               const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      seg.original.segmentData.name,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    if (hasRecording)
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.check_circle,
-                            color: Colors.green,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '1 recording',
-                            style: const TextStyle(color: Colors.green),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
+              Text(seg.original.segmentData.name),
             ],
           ),
           const SizedBox(height: 24),
-          Card(
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              width: double.infinity,
-              child: Text(
-                seg.text,
-                textAlign: TextAlign.justify,
-                style: const TextStyle(fontSize: 18, height: 1.5),
-              ),
-            ),
-          ),
+          Text(seg.text),
           const SizedBox(height: 24),
-
-          // waveform area
-          if (_isRecording && isCurrent && _recorderController != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: waveforms.AudioWaveforms(
-                  size: Size(MediaQuery.of(context).size.width - 80, 100),
-                  recorderController: _recorderController!,
-                  waveStyle: waveforms.WaveStyle(
-                    waveColor: Theme.of(context).primaryColor,
-                    showDurationLabel: true,
-                    spacing: 8.0,
-                    showBottom: true,
-                    extendWaveform: true,
-                    showMiddleLine: false,
-                    waveThickness: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  padding: const EdgeInsets.all(8),
-                ),
-              ),
+          if (_isRecording)
+            waveforms.AudioWaveforms(
+              recorderController: _recorderController!,
+              size: const Size(double.infinity, 80),
             )
-          else if (hasRecording && seg.playerController != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: waveforms.AudioFileWaveforms(
-                  size: Size(MediaQuery.of(context).size.width - 80, 100),
-                  playerController: seg.playerController!,
-                  enableSeekGesture: true,
-                  waveformType: waveforms.WaveformType.long,
-                  playerWaveStyle: const waveforms.PlayerWaveStyle(
-                    fixedWaveColor: Colors.grey,
-                    liveWaveColor: Colors.red,
-                    spacing: 6.0,
-                  ),
-                ),
-              ),
-            )
-          else
-            const SizedBox(height: 92),
+          else if (seg.playerController != null)
+            waveforms.AudioFileWaveforms(
+              playerController: seg.playerController!,
+              size: const Size(double.infinity, 80),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildRecordingControls() {
-    final seg = _segmentsLocal[_currentSegmentIndex];
-    final hasRecording = seg.audioPath != null && seg.audioPath!.isNotEmpty;
-    final canPlay =
-        hasRecording && seg.playerController != null && seg.isPlayerPrepared;
+  Widget _buildControls() {
+    final seg = _segmentsLocal[_segmentIndex];
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          if (_isRecording) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.pause),
-                  label: const Text('Pause'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: _stopRecording,
-                  icon: const Icon(Icons.stop),
-                  label: const Text('Stop'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ] else ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                WholeButton(
-                  onPressed: _isRecorderReady
-                      ? (_isRecording ? _stopRecording : _startRecording)
-                      : null,
-                  icon: _isRecording
-                      ? FontAwesomeIcons.stop
-                      : FontAwesomeIcons.microphoneLines,
-                  text: _isRecording ? 'Stop' : 'Record',
-                  wide: true,
-                ),
-                WholeButton(
-                  onPressed: canPlay ? _togglePlayPause : null,
-                  disabled: !canPlay,
-                  icon: seg.isPlaying
-                      ? FontAwesomeIcons.pause
-                      : FontAwesomeIcons.play,
-                ),
-                WholeButton(
-                  icon: FontAwesomeIcons.trash,
-                  suggested: false,
-                  disabled: !hasRecording,
-                  onPressed: hasRecording ? _deleteRecording : null,
-                ),
-              ],
-            ),
-          ],
-
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              Expanded(
-                child: WholeButton(
-                  wide: true,
-                  onPressed: _currentSegmentIndex > 0
-                      ? _goToPreviousSegment
-                      : null,
-                  icon: FontAwesomeIcons.chevronLeft,
-                  disabled: _currentSegmentIndex == 0,
-                  text: "Previous",
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: WholeButton(
-                  onPressed: _goToNextSegment,
-                  icon: FontAwesomeIcons.chevronRight,
-                  text: _currentSegmentIndex == _segmentsLocal.length - 1
-                      ? "Review"
-                      : "Next",
-                  wide: true,
-                ),
-              ),
-            ],
+          WholeButton(
+            icon: _isRecording
+                ? FontAwesomeIcons.stop
+                : FontAwesomeIcons.microphone,
+            text: _isRecording ? 'Stop' : 'Record',
+            onPressed: _isRecording ? _stopRecording : _startRecording,
+          ),
+          WholeButton(
+            icon: FontAwesomeIcons.play,
+            onPressed: seg.playerController != null
+                ? seg.playerController!.startPlayer
+                : null,
+          ),
+          WholeButton(
+            icon: FontAwesomeIcons.trash,
+            onPressed: seg.audioPath != null
+                ? () => setState(() => _deleteRecordingInternal(seg))
+                : null,
           ),
         ],
       ),
     );
   }
 
-  void _goToNextSegment() {
-    if (_currentSegmentIndex < _segmentsLocal.length) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
-  void _goToPreviousSegment() {
-    if (_currentSegmentIndex > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+  Widget _buildSubmitPage() {
+    return Center(
+      child: _isUploading
+          ? LinearProgressIndicator(value: _uploadProgress)
+          : ElevatedButton(
+              onPressed: _canSubmit ? _submit : null,
+              child: const Text('Submit'),
+            ),
+    );
   }
 }
+
+// ---------- Model ----------
 
 class SegmentDataLocal {
   final String id;
   final FinalAPSegment original;
-  String text;
+  final String text;
+
   String? audioPath;
-  String? audioUrl;
   waveforms.PlayerController? playerController;
   bool isPlaying = false;
-  bool isPlayerPrepared = false;
 
   SegmentDataLocal({
     required this.id,
     required this.original,
     required this.text,
-    this.audioPath,
-    this.audioUrl,
   });
 }

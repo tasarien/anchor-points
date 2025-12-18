@@ -37,13 +37,12 @@ class RequestListTileNotifications extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: colorScheme.primary, width: 1),
         ),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 10,
           children: [
             _buildHeader(context),
-
-            const SizedBox(height: 16),
 
             ...halves.map(
               (half) => _buildHalfRequest(context, half, colorScheme, appData),
@@ -54,19 +53,21 @@ class RequestListTileNotifications extends StatelessWidget {
     );
   }
 
-  // ─────────────────────────────────────────────
   // Header
   Widget _buildHeader(BuildContext context) {
     return Center(
-      child: Text(
-        AppLocalizations.of(context).translate('request_from') +
-            (request.requester != null ? request.requester!.username! : ""),
-        style: Theme.of(context).textTheme.headlineMedium,
-      ),
+      child: mode == RequestTileMode.forRequester
+          ? Text('request')
+          : Text(
+              AppLocalizations.of(context).translate('request_from') +
+                  (request.requester != null
+                      ? request.requester!.username!
+                      : ""),
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
     );
   }
 
-  // ─────────────────────────────────────────────
   // Half request tile
   Widget _buildHalfRequest(
     BuildContext context,
@@ -75,38 +76,63 @@ class RequestListTileNotifications extends StatelessWidget {
     DataProvider appData,
   ) {
     final canAct = _canActOnHalfRequest(half);
+    final isForYou = _isForYou(half);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Stack(
         children: [
-          _buildHalfHeader(context, half),
-          const SizedBox(height: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHalfHeader(context, half),
+              const SizedBox(height: 8),
+              if (isForYou)
+                if (half.message?.isNotEmpty ?? false)
+                  _buildMessage(context, half, colorScheme)
+                else
+                  _buildDescription(context, half, colorScheme),
 
-          if (half.message?.isNotEmpty ?? false)
-            _buildMessage(context, half, colorScheme)
-          else
-            _buildDescription(context, half, colorScheme),
+              const SizedBox(height: 12),
 
-          const SizedBox(height: 12),
+              if (canAct && isForYou)
+                _buildPendingActions(context, half, colorScheme, appData),
 
-          if (canAct && half.status == RequestStatus.pending)
-            _buildPendingActions(context, half, colorScheme, appData),
+              const Divider(height: 24),
 
-          const Divider(height: 24),
-
-          _buildMetadata(context, half, colorScheme),
+              _buildMetadata(context, half, colorScheme),
+            ],
+          ),
+          if (!isForYou)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(10),
+                  border: BoxBorder.all(color: colorScheme.primary),
+                ),
+                child: Center(
+                  child: Text(
+                    'This half of request is for someone else to act.',
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  // ─────────────────────────────────────────────
   // Permissions logic
   bool _canActOnHalfRequest(HalfRequestModel half) {
-    if (half.status != RequestStatus.pending) return false;
+    return half.status == RequestStatus.pending;
+  }
 
+  bool _isForYou(HalfRequestModel half) {
     switch (mode) {
       case RequestTileMode.forRequested:
         return half.companionId == userId &&
@@ -117,7 +143,6 @@ class RequestListTileNotifications extends StatelessWidget {
     }
   }
 
-  // ─────────────────────────────────────────────
   // UI pieces
   Widget _buildHalfHeader(BuildContext context, HalfRequestModel half) {
     return Row(
@@ -154,13 +179,32 @@ class RequestListTileNotifications extends StatelessWidget {
     HalfRequestModel half,
     ColorScheme colorScheme,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(half.message!, style: Theme.of(context).textTheme.bodyMedium),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            SizedBox(width: 10),
+            Icon(FontAwesomeIcons.message, size: 12),
+            SizedBox(width: 10),
+            Text('request_message'),
+          ],
+        ),
+        SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(14),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            border: Border.all(color: colorScheme.primary),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            half.message!,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      ],
     );
   }
 
@@ -201,7 +245,9 @@ class RequestListTileNotifications extends StatelessWidget {
             context,
           ).translate('request_action_decline'),
           circleColor: colorScheme.errorContainer,
-          onPressed: () {},
+          onPressed: () {
+            request.changeStatus(RequestStatus.declined, half.type);
+          },
         ),
         const SizedBox(width: 12),
         WholeButton(

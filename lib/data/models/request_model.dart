@@ -1,6 +1,7 @@
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/user_profile.dart';
 import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
+import 'package:anchor_point_app/data/sources/request_source.dart';
 import 'package:anchor_point_app/data/sources/user_info_source.dart';
 import 'package:anchor_point_app/presentations/screens/crafting_screen.dart';
 import 'package:flutter/material.dart';
@@ -10,13 +11,13 @@ import 'package:intl/intl.dart';
 class HalfRequestModel {
   RequestType type;
   CompanionType companionType;
-  final RequestStatus status; // 'created, pending', 'completed', 'declined',
+  RequestStatus status; // 'created, pending', 'completed', 'declined',
   final String? companionId;
   final String? invitationCode;
   final String? message;
 
   final DateTime createdAt;
-  final DateTime? completedAt;
+  DateTime? completedAt;
   String? companionUsername;
   HalfRequestModel({
     required this.type,
@@ -59,7 +60,7 @@ class HalfRequestModel {
     switch (status) {
       case RequestStatus.pending:
         return Colors.orange;
-      case RequestStatus.created:
+      case RequestStatus.waiting:
         return Colors.yellow;
       case RequestStatus.declined:
         return Colors.red;
@@ -144,9 +145,39 @@ class RequestModel {
       requester = profile;
     }
   }
+
+  Future<void> changeStatus(RequestStatus newStatus, RequestType type) async {
+    switch (type) {
+      case RequestType.text:
+        textRequest.status = newStatus;
+        if (newStatus == RequestStatus.completed) {
+          // Set completion date to this moment
+          textRequest.completedAt = DateTime.now();
+
+          // Unlock according audio request
+          audioRequest.status = RequestStatus.pending;
+        }
+        SupabaseRequestSource().updateRequest(id, {
+          'text_request': textRequest.toJson(),
+          'audio_request': audioRequest.toJson(),
+        });
+        break;
+      case RequestType.audio:
+        audioRequest.status = newStatus;
+        if (newStatus == RequestStatus.completed) {
+          // Set completion date to this moment
+          audioRequest.completedAt = DateTime.now();
+        }
+        SupabaseRequestSource().updateRequest(id, {
+          'text_request': textRequest.toJson(),
+          'audio_request': textRequest.toJson(),
+        });
+        break;
+    }
+  }
 }
 
-enum RequestStatus { created, pending, completed, declined }
+enum RequestStatus { waiting, pending, completed, declined }
 
 enum RequestType { text, audio }
 

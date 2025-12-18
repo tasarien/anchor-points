@@ -236,35 +236,41 @@ class _WritingScreenState extends State<WritingScreen> {
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(segments.length + 1, (index) {
-                          if (index == segments.length) {
+                        spacing: 5,
+                        children: List.generate(segments.length + 2, (index) {
+                          if (index == 0) {
+                            return FaIcon(
+                              FontAwesomeIcons.circle,
+                              size: 12,
+                              color: _currentPage == index
+                                  ? colorScheme.onSurface
+                                  : _canSubmit()
+                                  ? colorScheme.secondary
+                                  : colorScheme.tertiary,
+                            );
+                          } else if (index == segments.length + 1) {
                             // Submit page arrow
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              child: FaIcon(
-                                FontAwesomeIcons.paperPlane,
-                                size: 12,
-                                color: _currentPage == index
-                                    ? colorScheme.onSurface
-                                    : _canSubmit()
-                                    ? colorScheme.secondary
-                                    : colorScheme.tertiary,
-                              ),
+                            return FaIcon(
+                              FontAwesomeIcons.paperPlane,
+                              size: 12,
+                              color: _currentPage == index
+                                  ? colorScheme.onSurface
+                                  : _canSubmit()
+                                  ? colorScheme.secondary
+                                  : colorScheme.tertiary,
                             );
                           } else {
                             // Segment circles
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _writingStates[index]?.isComplete == true
-                                    ? colorScheme.secondary
-                                    : index == _currentPage
-                                    ? colorScheme.onSurface
-                                    : colorScheme.primary,
-                              ),
+                            return FaIcon(
+                              _writingStates[index - 1]?.isComplete == true
+                                  ? FontAwesomeIcons.solidSquare
+                                  : FontAwesomeIcons.square,
+                              color: index == _currentPage
+                                  ? colorScheme.onSurface
+                                  : _writingStates[index - 1]?.isComplete ==
+                                        true
+                                  ? colorScheme.secondary
+                                  : colorScheme.primary,
                             );
                           }
                         }),
@@ -277,30 +283,44 @@ class _WritingScreenState extends State<WritingScreen> {
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
-                    itemCount: segments.length + 1, // +1 for submit page
+                    itemCount:
+                        segments.length +
+                        2, // +2 for request page and submit page
                     onPageChanged: (index) {
                       // Unfocus previous page if it's a writing page
-                      if (_currentPage < segments.length) {
-                        _focusNodes[_currentPage]?.unfocus();
+                      if (_currentPage > 0 && _currentPage <= segments.length) {
+                        _focusNodes[_currentPage - 1]?.unfocus();
                       }
                       setState(() => _currentPage = index);
                       // Focus new page after a brief delay if it's a writing page
-                      if (index < segments.length) {
+                      if (index > 0 && index <= segments.length) {
                         Future.delayed(const Duration(milliseconds: 300), () {
-                          _focusNodes[index]?.requestFocus();
+                          _focusNodes[index - 1]?.requestFocus();
                         });
                       }
                     },
                     itemBuilder: (context, index) {
-                      if (index == segments.length) {
+                      if (index == 0) {
+                        return _buildRequestPage();
+                      } else if (index == segments.length + 1) {
                         return _buildSubmitPage();
                       }
-                      return _buildSegmentPage(segments[index], index);
+                      return _buildSegmentPage(segments[index - 1], index - 1);
                     },
                   ),
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildRequestPage() {
+    DataProvider appData = context.watch<DataProvider>();
+    ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(),
     );
   }
 
@@ -405,7 +425,7 @@ class _WritingScreenState extends State<WritingScreen> {
           const SizedBox(height: 40),
 
           ActionSlider.standard(
-            child: Text(getText("subit_ap_text")),
+            child: Text(getText("submit_ap_text")),
             loadingIcon: CircularProgressIndicator(),
             toggleColor: colorScheme.tertiary,
             rolling: true,
@@ -429,13 +449,11 @@ class _WritingScreenState extends State<WritingScreen> {
                   {'segments_text': segmentsText},
                 );
 
-                await SupabaseRequestSource().updateRequest(widget.request.id, {
-                  'status': 'completed',
-                  'completed_at': DateTime.now().toIso8601String(),
-                });
-                // await SupabaseRequestSource().updateRequest(
+                await widget.request.changeStatus(
+                  RequestStatus.completed,
+                  RequestType.text,
+                );
 
-                // );
                 await appData.loadRequests();
                 controller.success();
 

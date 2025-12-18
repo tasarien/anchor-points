@@ -15,8 +15,7 @@ class AnchorPoint {
   final String? imageUrl;
   final List<SegmentPrompt>? segmentPrompts;
   final List<FinalAPSegment>? finalSegments;
-  final RequestModel? audioRequest;
-  final RequestModel? textRequest;
+  final RequestModel? request;
 
   AnchorPoint({
     required this.id,
@@ -27,22 +26,15 @@ class AnchorPoint {
     this.imageUrl,
     this.segmentPrompts,
     this.finalSegments,
-    this.audioRequest,
-    this.textRequest,
+    this.request,
   });
 
   static Future<AnchorPoint> fromJsonAsync(Map<String, dynamic> json) async {
     final requestSource = SupabaseRequestSource();
 
-    final RequestModel? textRequest = json['text_request_id'] != null
+    final RequestModel? req = json['request_id'] != null
         ? RequestModel.fromJson(
-            await requestSource.getRequest(json['text_request_id']),
-          )
-        : null;
-
-    final RequestModel? audioRequest = json['audio_request_id'] != null
-        ? RequestModel.fromJson(
-            await requestSource.getRequest(json['audio_request_id']),
+            await requestSource.getRequest(json['request_id']),
           )
         : null;
 
@@ -84,8 +76,7 @@ class AnchorPoint {
       imageUrl: json['image_url'] as String?,
       segmentPrompts: segmentPrompts,
       finalSegments: makeFinalSegments(),
-      textRequest: textRequest,
-      audioRequest: audioRequest,
+      request: req,
     );
   }
 
@@ -114,8 +105,7 @@ class AnchorPoint {
     String? imageUrl,
     List<SegmentPrompt>? segmentPrompts,
     List<FinalAPSegment>? finalSegments,
-    RequestModel? audioRequest,
-    RequestModel? textRequest,
+    RequestModel? request,
   }) {
     return AnchorPoint(
       id: id ?? this.id,
@@ -126,8 +116,7 @@ class AnchorPoint {
       imageUrl: imageUrl ?? this.imageUrl,
       segmentPrompts: segmentPrompts ?? this.segmentPrompts,
       finalSegments: finalSegments ?? this.finalSegments,
-      audioRequest: audioRequest ?? this.audioRequest,
-      textRequest: textRequest ?? this.textRequest,
+      request: request ?? this.request,
     );
   }
 }

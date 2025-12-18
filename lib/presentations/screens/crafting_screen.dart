@@ -981,7 +981,7 @@ class _SummaryCard extends StatelessWidget {
                 HalfRequestModel audioRequest = HalfRequestModel(
                   type: RequestType.audio,
                   companionType: audioProvider,
-                  status: RequestStatus.created,
+                  status: RequestStatus.waiting,
                   createdAt: DateTime.now(),
                   message: audioMessageController.text ?? null,
                   companionId: audioCompanionId,
