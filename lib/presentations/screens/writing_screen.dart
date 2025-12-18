@@ -9,6 +9,7 @@ import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
 import 'package:anchor_point_app/data/sources/request_source.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
+import 'package:anchor_point_app/presentations/widgets/global/section_tab.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -230,8 +231,15 @@ class _WritingScreenState extends State<WritingScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(getText('segments') + ": "),
-                          Text('${_currentPage + 1}/${segments.length}'),
+                          if (_currentPage == 0)
+                            Text(getText('writing_screen_initial_page_title')),
+                          if (_currentPage == segments.length + 1)
+                            Text(getText('summary_page_title')),
+                          if (_currentPage > 0 &&
+                              _currentPage < segments.length + 1) ...[
+                            Text(getText('segments') + ": "),
+                            Text('${_currentPage}/${segments.length}'),
+                          ],
                         ],
                       ),
                       Row(
@@ -318,9 +326,273 @@ class _WritingScreenState extends State<WritingScreen> {
     DataProvider appData = context.watch<DataProvider>();
     ColorScheme colorScheme = Theme.of(context).colorScheme;
 
+    Widget _instructionsSection() {
+      ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+      return Card(
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SectionTab(
+            text: getText('instructionsTitle'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+
+                Text(
+                  getText('instructionsDescription'),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade700,
+                    height: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Visual cues for rules
+                _buildInstructionItem(
+                  icon: Icons.article,
+                  color: colorScheme.secondary,
+                  title: getText('instructionSegmentsTitle'),
+                  description: getText(
+                    'instructionSegmentsDescription',
+                  ).replaceAll('{count}', segments.length.toString()),
+                ),
+
+                const SizedBox(height: 12),
+
+                _buildInstructionItem(
+                  icon: Icons.text_fields,
+                  color: Colors.orange,
+                  title: getText('instructionMinWordsTitle'),
+                  description: getText(
+                    'instructionMinWordsDescription',
+                  ).replaceAll('{min}', widget.minWordCount.toString()),
+                ),
+
+                const SizedBox(height: 12),
+
+                _buildInstructionItem(
+                  icon: Icons.check_circle,
+                  color: Colors.green,
+                  title: getText('instructionCompletionTitle'),
+                  description: getText('instructionCompletionDescription'),
+                ),
+
+                const SizedBox(height: 12),
+
+                _buildInstructionItem(
+                  icon: Icons.swipe,
+                  color: colorScheme.tertiary,
+                  title: getText('instructionNavigationTitle'),
+                  description: getText('instructionNavigationDescription'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget _requestFromUserSection() {
+      ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+      return Card(
+        elevation: 2,
+        color: colorScheme.primaryContainer.withOpacity(0.3),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      FontAwesomeIcons.userPen,
+                      color: colorScheme.primary,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          getText('requestFromTitle'),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        if (widget.request.requester?.username != null)
+                          Text(
+                            '@${widget.request.requester!.username}',
+                            style: TextStyle(
+                              color: colorScheme.secondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Request type indicator
+              Row(
+                children: [
+                  Icon(
+                    widget.request.textRequest.typeIcon(),
+                    size: 16,
+                    color: Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    getText('requestTypeText'),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.request.textRequest
+                          .getStatusColor()
+                          .withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      getText(widget.request.textRequest.getStatusLabel()),
+                      style: TextStyle(
+                        color: widget.request.textRequest.getStatusColor(),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Personal message if present
+              if (widget.request.textRequest.message != null &&
+                  widget.request.textRequest.message!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: colorScheme.primary.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.message,
+                            size: 16,
+                            color: colorScheme.secondary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            getText('requestMessageLabel'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.secondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.request.textRequest.message!,
+                        style: const TextStyle(fontSize: 14, height: 1.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // What the requester wants
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb,
+                      color: Colors.amber.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        getText('requestWhatRequesterWants')
+                            .replaceAll(
+                              '{segments}',
+                              segments.length.toString(),
+                            )
+                            .replaceAll(
+                              '{minWords}',
+                              widget.minWordCount.toString(),
+                            ),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Date information
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today,
+                    size: 14,
+                    color: Colors.grey.shade500,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${getText('requestCreatedAt')}: ${(widget.request.textRequest.createdAt)}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(),
+      child: Column(
+        children: [_instructionsSection(), _requestFromUserSection()],
+      ),
     );
   }
 
@@ -675,4 +947,46 @@ class _WritingScreenState extends State<WritingScreen> {
       ),
     );
   }
+}
+
+Widget _buildInstructionItem({
+  required IconData icon,
+  required Color color,
+  required String title,
+  required String description,
+}) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              description,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 }

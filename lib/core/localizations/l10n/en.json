@@ -205,7 +205,46 @@
 
 "created_info" : "This request will be available, when according text request will be completed.",
 "submit_ap_text" : "Submit all segments",
-"success_in_saving_text" : "Texts for all segments was sent."
+"success_in_saving_text" : "Texts for all segments was sent.",
+
+  "instructionsTitle": "How it works?",
+  "instructionsDescription": "Complete your response by writing for each segment. Each segment represents a part of your Anchor Point and has its own prompt to guide you.",
+  
+  "instructionSegmentsTitle": "Complete All Segments",
+  "instructionSegmentsDescription": "You have {count} segments to complete. Each segment focuses on a different aspect of your experience.",
+  
+  "instructionMinWordsTitle": "Minimum Word Count",
+  "instructionMinWordsDescription": "Each segment requires at least {min} words. Take your time to express yourself fully.",
+  
+  "instructionCompletionTitle": "Track Your Progress",
+  "instructionCompletionDescription": "Completed segments will show a filled square. You can submit once all segments are complete.",
+  
+  "instructionNavigationTitle": "Navigate Between Segments",
+  "instructionNavigationDescription": "Swipe left or right to move between segments. Your progress is automatically saved as you type.",
+  
+  "requestFromTitle": "Request From",
+  "requestTypeText": "Text Response",
+  "requestMessageLabel": "Personal Message",
+  "requestWhatRequesterWants": "The requester is asking you to write a thoughtful response for {segments} segments, with at least {minWords} words per segment.",
+  "requestCreatedAt": "Requested on",
+  
+  "submitPageTitleReady": "Ready to Submit!",
+  "submitPageTitleNotReady": "Almost There!",
+  "submitPageDescriptionReady": "You've completed all segments. Review your work and submit when ready.",
+  "submitPageDescriptionNotReady": "Complete all segments before submitting. Each segment needs the minimum word count.",
+  
+  "submitPageSummaryTitle": "Your Writing Summary",
+  "submitPageSegmentsLabel": "Total Segments",
+  "submitPageCompletedLabel": "Completed",
+  "submitPageTotalWordsLabel": "Total Words",
+  
+  
+  "writing_prompts": "Writing Prompt",
+  "writing_screen_initial_page_title" : "Start page",
+  "summary_page_title" : "Submit"
+  
+
+}
 
 
 
@@ -214,6 +253,6 @@
 
 
 
-}
+
 
 
