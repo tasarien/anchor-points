@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseAnchorPointSource {
@@ -35,5 +37,33 @@ class SupabaseAnchorPointSource {
         .from('anchorPoints')
         .update(updatedRows)
         .eq('id', anchorPointId);
+  }
+
+  Future<String> uploadAudioFile(
+    String filePath,
+    String folderName,
+    String fileName,
+  ) async {
+    try {
+      final bytes = await File(filePath).readAsBytes();
+      final userId = supabase.auth.currentUser!.id;
+      final storagePath = '$userId/$folderName/$fileName.m4a';
+
+      await supabase.storage
+          .from('anchor-points-audio')
+          .uploadBinary(storagePath, bytes);
+
+      final publicUrl = supabase.storage
+          .from('anchor-points-audio')
+          .getPublicUrl(storagePath);
+
+      return publicUrl;
+    } on SocketException catch (e) {
+      throw Exception('Network error: ${e.message}');
+    } on PostgrestException catch (e) {
+      throw Exception('Database error: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to upload audio: $e');
+    }
   }
 }

@@ -15,6 +15,7 @@ class RequestListTileNotifications extends StatelessWidget {
   final RequestTileMode mode;
   final String userId; // from Supabase auth
   final VoidCallback? onDelete;
+  final bool expanded;
 
   const RequestListTileNotifications({
     super.key,
@@ -22,6 +23,7 @@ class RequestListTileNotifications extends StatelessWidget {
     required this.mode,
     required this.userId,
     this.onDelete,
+    this.expanded = true,
   });
 
   @override
@@ -90,21 +92,26 @@ class RequestListTileNotifications extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHalfHeader(context, half),
-              const SizedBox(height: 8),
-              if (isForYou)
-                if (half.message?.isNotEmpty ?? false)
-                  _buildMessage(context, half, colorScheme)
-                else
-                  _buildDescription(context, half, colorScheme),
+              if (expanded)
+                Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    if (isForYou)
+                      if (half.message?.isNotEmpty ?? false)
+                        _buildMessage(context, half, colorScheme)
+                      else
+                        _buildDescription(context, half, colorScheme),
 
-              const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-              if (canAct && isForYou)
-                _buildPendingActions(context, half, colorScheme, appData),
+                    if (canAct && isForYou)
+                      _buildPendingActions(context, half, colorScheme, appData),
 
-              const Divider(height: 24),
+                    const Divider(height: 24),
 
-              _buildMetadata(context, half, colorScheme),
+                    _buildMetadata(context, half, colorScheme),
+                  ],
+                ),
             ],
           ),
           if (!isForYou)
@@ -238,17 +245,30 @@ class RequestListTileNotifications extends StatelessWidget {
     final isText = half.type == RequestType.text;
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        WholeButton(
-          icon: FontAwesomeIcons.xmark,
-          text: AppLocalizations.of(
-            context,
-          ).translate('request_action_decline'),
-          circleColor: colorScheme.errorContainer,
-          onPressed: () {
-            request.changeStatus(RequestStatus.declined, half.type);
-          },
-        ),
+        half.companionType == CompanionType.companion
+            ? WholeButton(
+                icon: FontAwesomeIcons.xmark,
+                wide: true,
+                text: AppLocalizations.of(
+                  context,
+                ).translate('request_action_decline'),
+                suggested: false,
+                circleColor: colorScheme.errorContainer.withAlpha(120),
+                onPressed: () {
+                  request.changeStatus(RequestStatus.declined, half.type);
+                },
+              )
+            : WholeButton(
+                icon: FontAwesomeIcons.ellipsisVertical,
+                wide: true,
+                text: AppLocalizations.of(
+                  context,
+                ).translate('request_action_edit'),
+                suggested: false,
+                onPressed: () {},
+              ),
         const SizedBox(width: 12),
         WholeButton(
           wide: true,

@@ -1,8 +1,12 @@
+import 'package:anchor_point_app/presentations/widgets/global/cont_with_bg.dart';
 import 'package:flutter/material.dart';
 
 class WholeScaffoldBody extends StatelessWidget {
   final Widget child;
-  const WholeScaffoldBody({Key? key, required this.child}) : super(key: key);
+  final String? assetName;
+
+  const WholeScaffoldBody({Key? key, required this.child, this.assetName})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -10,22 +14,17 @@ class WholeScaffoldBody extends StatelessWidget {
     return SafeArea(
       child: Center(
         child: Container(
+          color: colorScheme.scaffoldBackgroundColor,
           constraints: BoxConstraints(
             maxWidth: 600,
             maxHeight: MediaQuery.of(context).size.height,
           ),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              stops: [0, 0.8],
-              colors: [
-                colorScheme.colorScheme.surface,
-                colorScheme.scaffoldBackgroundColor,
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+
+          child: ContWithBg(
+            assetName: assetName ?? '',
+            color: colorScheme.colorScheme.onSurface.withAlpha(70),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );

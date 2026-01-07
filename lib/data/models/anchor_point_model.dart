@@ -55,10 +55,11 @@ class AnchorPoint {
                   ? json['segments_text'][index]
                   : null,
               audioUrl: json['segments_audio'] != null
-                  ? json['segments_text'][index]
+                  ? json['segments_audio'][index]
                   : null,
             ),
           );
+          index++;
         }
       }
       return finalSegments;

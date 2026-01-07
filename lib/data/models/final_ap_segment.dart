@@ -6,13 +6,5 @@ class FinalAPSegment {
   final String? text;
   final String? audioUrl;
 
-  FinalAPSegment({
-    required this.segmentData,
-    this.text,
-    this.audioUrl,
-
-  });
-
-
+  FinalAPSegment({required this.segmentData, this.text, this.audioUrl});
 }
-

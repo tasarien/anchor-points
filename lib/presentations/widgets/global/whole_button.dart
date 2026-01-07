@@ -164,7 +164,7 @@ class _WholeButtonState extends State<WholeButton> {
             ),
           ),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: widget.wide ? 10 : 0),
+            padding: EdgeInsets.symmetric(horizontal: widget.wide ? 5 : 0),
             child: Badge(
               isLabelVisible: widget.secondBagde != null,
               label: widget.secondBagde,
@@ -181,7 +181,7 @@ class _WholeButtonState extends State<WholeButton> {
                   children: [
                     widget.wide
                         ? Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Container(
                               width: double.infinity,
                               height: double.infinity,
@@ -189,7 +189,7 @@ class _WholeButtonState extends State<WholeButton> {
                                 border: Border.all(
                                   color:
                                       widget.circleColor ??
-                                      theme.colorScheme.surface,
+                                      theme.colorScheme.primary.withAlpha(160),
                                   width: widget.switchMode
                                       ? 4
                                       : 3, // thicker border for toggle mode

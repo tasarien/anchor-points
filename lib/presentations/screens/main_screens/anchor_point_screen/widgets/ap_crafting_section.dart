@@ -42,6 +42,9 @@ class ApCraftingSection extends StatelessWidget {
                 request: controller.currentAnchorPoint!.request!,
                 mode: RequestTileMode.forRequester,
                 userId: Supabase.instance.client.auth.currentUser!.id,
+                expanded:
+                    controller.currentAnchorPoint!.status ==
+                    AnchorPointStatus.drafted,
               )
             : GestureDetector(
                 onTap: () {

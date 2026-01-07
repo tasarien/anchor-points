@@ -21,6 +21,10 @@ PODS:
   - Flutter (1.0.0)
   - flutter_localization (0.0.1):
     - Flutter
+  - flutter_sound (9.30.0):
+    - Flutter
+    - flutter_sound_core (= 9.30.0)
+  - flutter_sound_core (9.30.0)
   - flutter_web_auth_2 (3.0.0):
     - Flutter
   - fluttertoast (0.0.2):
@@ -132,6 +136,7 @@ DEPENDENCIES:
   - emoji_picker_flutter (from `.symlinks/plugins/emoji_picker_flutter/ios`)
   - Flutter (from `Flutter`)
   - flutter_localization (from `.symlinks/plugins/flutter_localization/ios`)
+  - flutter_sound (from `.symlinks/plugins/flutter_sound/ios`)
   - flutter_web_auth_2 (from `.symlinks/plugins/flutter_web_auth_2/ios`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
@@ -148,6 +153,7 @@ SPEC REPOS:
   trunk:
     - AppAuth
     - AppCheckCore
+    - flutter_sound_core
     - GoogleSignIn
     - GoogleUtilities
     - GTMAppAuth
@@ -175,6 +181,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_localization:
     :path: ".symlinks/plugins/flutter_localization/ios"
+  flutter_sound:
+    :path: ".symlinks/plugins/flutter_sound/ios"
   flutter_web_auth_2:
     :path: ".symlinks/plugins/flutter_web_auth_2/ios"
   fluttertoast:
@@ -207,6 +215,8 @@ SPEC CHECKSUMS:
   emoji_picker_flutter: ece213fc274bdddefb77d502d33080dc54e616cc
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_localization: 72299fb6cb4e51cae587bd953ed0b958040b71e6
+  flutter_sound: d95194f6476c9ad211d22b3a414d852c12c7ca44
+  flutter_sound_core: 7f2626d249d3a57bfa6da892ef7e22d234482c1a
   flutter_web_auth_2: 3464a7c16dc6480b6194fc89913bae6e82f28405
   fluttertoast: 2c67e14dce98bbdb200df9e1acf610d7a6264ea1
   google_sign_in_ios: 00dfa94252eb10278b64828c81bcb7158a81a53a

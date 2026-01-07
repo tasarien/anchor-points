@@ -11,7 +11,7 @@ import 'package:intl/intl.dart';
 class HalfRequestModel {
   RequestType type;
   CompanionType companionType;
-  RequestStatus status; // 'created, pending', 'completed', 'declined',
+  RequestStatus status; // 'waiting', pending', 'completed', 'declined',
   final String? companionId;
   final String? invitationCode;
   final String? message;

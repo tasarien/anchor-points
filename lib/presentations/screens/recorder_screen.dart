@@ -1,12 +1,18 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:action_slider/action_slider.dart';
 import 'package:anchor_point_app/core/localizations/app_localizations.dart';
+import 'package:anchor_point_app/core/utils/anchor_point_icons.dart';
 import 'package:anchor_point_app/data/models/anchor_point_model.dart';
 import 'package:anchor_point_app/data/models/final_ap_segment.dart';
+import 'package:anchor_point_app/data/models/request_model.dart';
 import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
+import 'package:anchor_point_app/data/sources/request_source.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
+import 'package:anchor_point_app/presentations/widgets/global/page_indicator.dart';
+import 'package:anchor_point_app/presentations/widgets/global/record_button.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:audio_waveforms/audio_waveforms.dart' as waveforms;
@@ -18,6 +24,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:async'; // Added for StreamSubscription
 
 class AudioRecorderScreen extends StatefulWidget {
   final int anchorPointId;
@@ -67,6 +74,10 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
   int get _completedCount =>
       _segmentsLocal.where((s) => s.audioPath != null).length;
 
+  Timer? _recordingTimer;
+  int _recordingSeconds = 0;
+  static const int _maxRecordingSeconds = 35;
+
   // ----------------------------------------------------------
 
   @override
@@ -79,16 +90,20 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
   void dispose() {
     _pageController.dispose();
     _recorderController?.dispose();
+    _recordingTimer?.cancel(); // Add this line
     for (final seg in _segmentsLocal) {
-      seg.playerController?.dispose();
+      seg.dispose();
     }
     super.dispose();
   }
 
   Future<void> _initialize() async {
     await _fetchAnchorPoint();
+    debugPrint('here');
     await _checkPermissions();
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _fetchAnchorPoint() async {
@@ -96,28 +111,95 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
       await SupabaseAnchorPointSource().getAnchorPoint(widget.anchorPointId),
     );
 
-    setState(() {
-      anchorPoint = ap;
-      segments = ap.finalSegments ?? [];
-      _segmentsLocal = segments.map((s) {
-        return SegmentDataLocal(
-          id: _uuid.v4(),
-          original: s,
-          text: s.text ?? 'No text provided',
-        );
-      }).toList();
-    });
+    if (mounted) {
+      setState(() {
+        anchorPoint = ap;
+        segments = ap.finalSegments ?? [];
+        _segmentsLocal = segments.map((s) {
+          return SegmentDataLocal(
+            id: _uuid.v4(),
+            original: s,
+            text: s.text ?? 'No text provided',
+          );
+        }).toList();
+      });
+    }
   }
 
   Future<void> _checkPermissions() async {
     final mic = await Permission.microphone.request();
-    if (!mic.isGranted) return;
+    debugPrint('Microphone permission: ${mic.isGranted}');
 
-    if (Platform.isAndroid) {
-      await Permission.storage.request();
+    if (!mic.isGranted) {
+      if (mic.isDenied) {
+        debugPrint('❌ Microphone permission denied');
+        _showPermissionDialog(
+          'Microphone',
+          'This app needs microphone access to record audio.',
+        );
+      } else if (mic.isPermanentlyDenied) {
+        debugPrint('❌ Microphone permission permanently denied');
+        _showPermissionDialog(
+          'Microphone',
+          'Microphone permission is permanently denied. Please enable it in app settings.',
+          openSettings: true,
+        );
+      }
+      return;
     }
 
-    setState(() => _isRecorderReady = true);
+    if (Platform.isAndroid) {
+      final storage = await Permission.storage.request();
+      if (!storage.isGranted) {
+        if (storage.isDenied) {
+          debugPrint('❌ Storage permission denied');
+          _showPermissionDialog(
+            'Storage',
+            'This app needs storage access to save recordings.',
+          );
+        } else if (storage.isPermanentlyDenied) {
+          debugPrint('❌ Storage permission permanently denied');
+          _showPermissionDialog(
+            'Storage',
+            'Storage permission is permanently denied. Please enable it in app settings.',
+            openSettings: true,
+          );
+        }
+        return;
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isRecorderReady = true);
+    }
+  }
+
+  void _showPermissionDialog(
+    String title,
+    String message, {
+    bool openSettings = false,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          if (openSettings)
+            TextButton(
+              onPressed: () {
+                openAppSettings();
+                Navigator.pop(context);
+              },
+              child: const Text('Open Settings'),
+            ),
+        ],
+      ),
+    );
   }
 
   // ---------- Recording ----------
@@ -128,7 +210,17 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
   }
 
   Future<void> _startRecording() async {
-    if (!_isSegmentPage || !_isRecorderReady) return;
+    debugPrint('🎙 Record button pressed');
+
+    if (!_isSegmentPage) {
+      debugPrint('❌ Not on segment page');
+      return;
+    }
+
+    if (!_isRecorderReady) {
+      debugPrint('❌ Recorder not ready');
+      return;
+    }
 
     final seg = _segmentsLocal[_segmentIndex];
     _deleteRecordingInternal(seg);
@@ -139,11 +231,32 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     final path = await _tempFilePath();
     await _recorderController!.record(path: path);
 
-    setState(() => _isRecording = true);
+    // Start timer
+    _recordingSeconds = 0;
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _recordingSeconds++;
+        });
+      }
+
+      // Auto-stop at 35 seconds
+      if (_recordingSeconds >= _maxRecordingSeconds) {
+        _stopRecording();
+      }
+    });
+
+    if (mounted) {
+      setState(() => _isRecording = true);
+    }
   }
 
   Future<void> _stopRecording() async {
     if (!_isRecording || !_isSegmentPage) return;
+
+    // Cancel timer
+    _recordingTimer?.cancel();
+    _recordingTimer = null;
 
     final path = await _recorderController!.stop();
     _recorderController?.dispose();
@@ -155,11 +268,18 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     seg.audioPath = path;
     await _preparePlayer(seg);
 
-    setState(() => _isRecording = false);
+    if (mounted) {
+      setState(() {
+        _isRecording = false;
+        _recordingSeconds = 0;
+      });
+    }
   }
 
   Future<void> _preparePlayer(SegmentDataLocal seg) async {
     seg.playerController?.dispose();
+    seg.playerSubscription?.cancel();
+
     seg.playerController = waveforms.PlayerController();
 
     await seg.playerController!.preparePlayer(
@@ -167,14 +287,20 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
       shouldExtractWaveform: true,
     );
 
-    seg.playerController!.onPlayerStateChanged.listen((state) {
-      setState(() {
-        seg.isPlaying = state == waveforms.PlayerState.playing;
-      });
+    // Store subscription and check mounted before setState
+    seg.playerSubscription = seg.playerController!.onPlayerStateChanged.listen((
+      state,
+    ) {
+      if (mounted) {
+        setState(() {
+          seg.isPlaying = state == waveforms.PlayerState.playing;
+        });
+      }
     });
   }
 
   void _deleteRecordingInternal(SegmentDataLocal seg) {
+    seg.playerSubscription?.cancel();
     seg.playerController?.dispose();
     seg.playerController = null;
 
@@ -184,40 +310,13 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     }
   }
 
-  // ---------- Upload ----------
-
-  Future<void> _submit() async {
-    if (!_canSubmit) return;
-
-    setState(() {
-      _isUploading = true;
-      _uploadProgress = 0;
-    });
-
-    final client = Supabase.instance.client;
-    final user = client.auth.currentUser!;
-    final ts = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-
-    for (int i = 0; i < _segmentsLocal.length; i++) {
-      final seg = _segmentsLocal[i];
-      final bytes = await File(seg.audioPath!).readAsBytes();
-
-      await client.storage
-          .from(widget.supabaseBucket)
-          .uploadBinary('${user.id}/$ts-$i.m4a', bytes);
-
-      setState(() => _uploadProgress = (i + 1) / _segmentsLocal.length);
-    }
-
-    Navigator.pop(context, true);
-  }
-
   // ---------- UI ----------
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final t = AppLocalizations.of(context).translate;
+    final getText = AppLocalizations.of(context).translate;
+    final DataProvider appData = context.watch<DataProvider>();
 
     if (_isLoading) {
       return const Scaffold(body: LoadingIndicator());
@@ -225,7 +324,23 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(t('record_screen_title')),
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          spacing: 20,
+          children: [
+            IconButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await Future.delayed(Duration(milliseconds: 300));
+                appData.changeTabVisibility(true);
+              },
+              icon: FaIcon(FontAwesomeIcons.chevronLeft, size: 18),
+            ),
+            Text(getText("record_screen_title")),
+          ],
+        ),
+
         actions: [
           Padding(
             padding: const EdgeInsets.all(16),
@@ -235,53 +350,30 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
       ),
       body: Column(
         children: [
-          // Indicators (MATCHES WritingScreen)
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: 5,
-              children: List.generate(_segmentsLocal.length + 2, (i) {
-                if (i == 0) {
-                  return Icon(
-                    FontAwesomeIcons.circle,
-                    color: _currentPage == 0
-                        ? colorScheme.onSurface
-                        : colorScheme.tertiary,
-                    size: 12,
-                  );
-                } else if (i == _segmentsLocal.length + 1) {
-                  return Icon(
-                    FontAwesomeIcons.paperPlane,
-                    color: _currentPage == i
-                        ? colorScheme.onSurface
-                        : colorScheme.tertiary,
-                    size: 12,
-                  );
-                } else {
-                  final seg = _segmentsLocal[i - 1];
-                  return Icon(
-                    seg.audioPath != null
-                        ? FontAwesomeIcons.solidSquare
-                        : FontAwesomeIcons.square,
-                    color: _currentPage == i
-                        ? colorScheme.onSurface
-                        : seg.audioPath != null
-                        ? colorScheme.secondary
-                        : colorScheme.primary,
-                  );
-                }
-              }),
+            child: PageIndicator(
+              segmentsLength: segments.length,
+              currentPage: _currentPage,
+              canSubmit: _canSubmit,
+              completed: _segmentsLocal
+                  .map((segment) => segment.audioPath != null)
+                  .toList(),
             ),
           ),
 
           Expanded(
             child: PageView.builder(
+              physics: _isRecording
+                  ? const NeverScrollableScrollPhysics()
+                  : const BouncingScrollPhysics(),
               controller: _pageController,
               itemCount: _segmentsLocal.length + 2,
               onPageChanged: (i) async {
                 if (_isRecording) await _stopRecording();
-                setState(() => _currentPage = i);
+                if (mounted) {
+                  setState(() => _currentPage = i);
+                }
               },
               itemBuilder: (_, i) {
                 if (i == 0) return const SizedBox();
@@ -302,18 +394,57 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              WholeSymbol(symbol: seg.original.segmentData.symbol),
-              const SizedBox(width: 16),
-              Text(seg.original.segmentData.name),
+              Row(
+                children: [
+                  WholeSymbol(symbol: seg.original.segmentData.symbol),
+                  const SizedBox(width: 16),
+                  Text(seg.original.segmentData.name),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: EdgeInsets.all(10),
+                child: Text(seg.text, style: TextStyle(fontSize: 24)),
+              ),
+              const SizedBox(height: 24),
+
+              // Add timer display
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      FontAwesomeIcons.clock,
+                      size: 16,
+                      color: _recordingSeconds > 30 ? Colors.red : null,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_recordingSeconds}s / ${_maxRecordingSeconds}s',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: _recordingSeconds > 30 ? Colors.red : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 24),
-          Text(seg.text),
-          const SizedBox(height: 24),
           if (_isRecording)
             waveforms.AudioWaveforms(
               recorderController: _recorderController!,
@@ -333,28 +464,51 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     final seg = _segmentsLocal[_segmentIndex];
 
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          WholeButton(
-            icon: _isRecording
-                ? FontAwesomeIcons.stop
-                : FontAwesomeIcons.microphone,
-            text: _isRecording ? 'Stop' : 'Record',
+          RecordButton(
+            isRecording: _isRecording,
             onPressed: _isRecording ? _stopRecording : _startRecording,
           ),
-          WholeButton(
-            icon: FontAwesomeIcons.play,
-            onPressed: seg.playerController != null
-                ? seg.playerController!.startPlayer
-                : null,
-          ),
-          WholeButton(
-            icon: FontAwesomeIcons.trash,
-            onPressed: seg.audioPath != null
-                ? () => setState(() => _deleteRecordingInternal(seg))
-                : null,
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              WholeButton(
+                icon: FontAwesomeIcons.trash,
+                text: 'delete',
+                disabled: seg.playerController == null,
+                onPressed: seg.audioPath != null
+                    ? () {
+                        if (mounted) {
+                          setState(() => _deleteRecordingInternal(seg));
+                        }
+                      }
+                    : null,
+              ),
+              WholeButton(
+                icon: FontAwesomeIcons.play,
+                text: 'play',
+                disabled: seg.playerController == null,
+                onPressed: seg.playerController != null
+                    ? seg.playerController!.startPlayer
+                    : null,
+              ),
+              WholeButton(
+                wide: seg.audioPath != null,
+                suggested: seg.audioPath != null,
+                onPressed: () {
+                  _pageController.nextPage(
+                    duration: Durations.medium1,
+                    curve: Curves.easeIn,
+                  );
+                },
+                text: seg.audioPath != null ? "next" : null,
+                icon: FontAwesomeIcons.arrowRight,
+              ),
+            ],
           ),
         ],
       ),
@@ -362,12 +516,187 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
   }
 
   Widget _buildSubmitPage() {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final DataProvider appData = context.watch<DataProvider>();
+    bool _canSubmit() {
+      return false;
+    }
+
+    List<Widget> _buildSummaryItems() {
+      return _segmentsLocal.map((seg) {
+        final hasRecording = seg.audioPath != null;
+        final isUploaded = seg.uploaded;
+
+        final color = isUploaded
+            ? Colors.green
+            : hasRecording
+            ? Colors.orange
+            : Colors.red;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isUploaded
+                        ? FontAwesomeIcons.checkCircle
+                        : hasRecording
+                        ? FontAwesomeIcons.circle
+                        : FontAwesomeIcons.exclamationCircle,
+                    color: color,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      seg.original.segmentData.name,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: isUploaded ? 1.0 : (hasRecording ? 0.5 : 0.0),
+                  backgroundColor: color.withOpacity(0.2),
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                  minHeight: 6,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList();
+    }
+
     return Center(
       child: _isUploading
           ? LinearProgressIndicator(value: _uploadProgress)
-          : ElevatedButton(
-              onPressed: _canSubmit ? _submit : null,
-              child: const Text('Submit'),
+          : Column(
+              children: [
+                const SizedBox(height: 40),
+
+                // Completion icon
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _canSubmit()
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.orange.withOpacity(0.1),
+                  ),
+                  child: Icon(
+                    _canSubmit() ? Icons.check_circle : Icons.pending,
+                    size: 60,
+                    color: _canSubmit() ? Colors.green : Colors.orange,
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Title
+                Text(
+                  _canSubmit() ? 'Upload recordings.' : 'Not ready yet.',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Description
+                Text(
+                  _canSubmit()
+                      ? 'All records can be submitted now.'
+                      : 'Not all segments are recorded. ',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 40),
+
+                // Summary card
+                Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: _buildSummaryItems(),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+                ActionSlider.standard(
+                  child: Text("submit_ap_audio"),
+                  loadingIcon: CircularProgressIndicator(),
+                  toggleColor: colorScheme.tertiary,
+                  rolling: true,
+                  icon: FaIcon(
+                    AnchorPointIcons.anchor_point_step3,
+                    color: colorScheme.onSurface,
+                    size: 40,
+                  ),
+                  successIcon: FaIcon(FontAwesomeIcons.check),
+                  failureIcon: FaIcon(FontAwesomeIcons.xmark),
+                  action: (controller) async {
+                    controller.loading();
+                    List<String> allUrls = [];
+                    for (int i = 0; i < _segmentsLocal.length; i++) {
+                      final segment = _segmentsLocal[i];
+                      try {
+                        String segmentUrl = await SupabaseAnchorPointSource()
+                            .uploadAudioFile(
+                              segment.audioPath!,
+                              anchorPoint.id.toString(),
+                              '${i}_${segment.original.segmentData.name}',
+                            );
+                        if (mounted) {
+                          setState(() {
+                            _segmentsLocal[i].uploaded = true;
+                          });
+                        }
+                        allUrls.add(segmentUrl);
+                      } catch (e) {
+                        debugPrint(e.toString());
+                      }
+                    }
+
+                    await anchorPoint.request!.changeStatus(
+                      RequestStatus.completed,
+                      RequestType.audio,
+                    );
+
+                    SupabaseAnchorPointSource().updateAnchorPoint(
+                      anchorPoint.id,
+                      {'segments_audio': allUrls, 'status': 'crafted'},
+                    );
+
+                    controller.success();
+
+                    await Future.delayed(Durations.extralong1);
+                    if (mounted) {
+                      appData.refreshAnchorPoint(anchorPoint.id);
+                      Navigator.pop(context);
+                      appData.changeTabVisibility(true);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("success_in_saving_text")),
+                      );
+                    }
+                  },
+                ),
+              ],
             ),
     );
   }
@@ -382,11 +711,19 @@ class SegmentDataLocal {
 
   String? audioPath;
   waveforms.PlayerController? playerController;
+  StreamSubscription? playerSubscription; // Added to track subscription
   bool isPlaying = false;
+  bool uploaded = false;
 
   SegmentDataLocal({
     required this.id,
     required this.original,
     required this.text,
   });
+
+  // Added dispose method to clean up resources
+  void dispose() {
+    playerSubscription?.cancel();
+    playerController?.dispose();
+  }
 }

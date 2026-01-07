@@ -188,11 +188,12 @@
   "requests_screen" : "Requests",
   "request_description_for_companion_part1" : "Other user ask you to ",
   "request_description_for_companion_part2_text" : "write a text for his Anchor Point. ",
-  "request_description_for_companion_part2_audio" : "write a text for his Anchor Point. ",
+  "request_description_for_companion_part2_audio" : "record an audio for his Anchor Point. ",
 
   "request_action_decline" : "Decline",
   "request_action_record" : "Record",
   "request_action_write" : "Write",
+   "request_action_edit" : "edit",
 
   "request_from" : "Request from:",
   "request_message_label" : "Message for this request:",

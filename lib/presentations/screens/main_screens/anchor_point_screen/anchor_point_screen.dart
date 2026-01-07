@@ -1,4 +1,5 @@
 import 'package:anchor_point_app/presentations/screens/main_screens/anchor_point_screen/widgets/ap_title_section.dart';
+import 'package:anchor_point_app/presentations/widgets/global/whole_scaffold_body.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/anchor_point_controller.dart';
@@ -42,42 +43,67 @@ class _AnchorPointScreenState extends State<AnchorPointScreen> {
             builder: (context, controller, child) {
               return Scaffold(
                 appBar: ApHeader(controller: controller),
-                body: controller.saveLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : Stack(
-                        children: [
-                          SingleChildScrollView(
-                            controller: controller.scrollController,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              spacing: 20,
-                              children: [
-                                ApProgressCard(controller: controller),
-                                ApTitleSection(controller: controller),
-                                if (controller.statusArchived)
-                                  const ApArchivedSection(),
-                                ApReadySection(
-                                  anchorPoint: widget
-                                      .appData
-                                      .currentAPController
-                                      .currentAnchorPoint!,
-                                  controller: controller,
+                body: WholeScaffoldBody(
+                  child: controller.saveLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : Stack(
+                          children: [
+                            SingleChildScrollView(
+                              controller: controller.scrollController,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                spacing: 20,
+                                children: [
+                                  ApProgressCard(controller: controller),
+                                  ApTitleSection(controller: controller),
+                                  if (controller.statusArchived)
+                                    const ApArchivedSection(),
+                                  ApReadySection(
+                                    anchorPoint: widget
+                                        .appData
+                                        .currentAPController
+                                        .currentAnchorPoint!,
+                                    controller: controller,
+                                  ),
+                                  ApCraftingSection(controller: controller),
+                                  ApDraftingSection(controller: controller),
+                                  ApDescriptionSection(controller: controller),
+                                ],
+                              ),
+                            ),
+                            if (!controller.isAtBottom)
+                              Positioned(
+                                bottom: 8,
+                                left: 0,
+                                right: 0,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    controller.scrollController.animateTo(
+                                      controller
+                                          .scrollController
+                                          .position
+                                          .maxScrollExtent,
+                                      duration: const Duration(
+                                        milliseconds: 500,
+                                      ),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.surface.withAlpha(155),
+                                    ),
+                                    child: Icon(Icons.keyboard_arrow_down),
+                                  ),
                                 ),
-                                ApCraftingSection(controller: controller),
-                                ApDraftingSection(controller: controller),
-                                ApDescriptionSection(controller: controller),
-                              ],
-                            ),
-                          ),
-                          if (!controller.isAtBottom)
-                            const Positioned(
-                              bottom: 8,
-                              left: 0,
-                              right: 0,
-                              child: Icon(Icons.keyboard_arrow_down),
-                            ),
-                        ],
-                      ),
+                              ),
+                          ],
+                        ),
+                ),
               );
             },
           ),
