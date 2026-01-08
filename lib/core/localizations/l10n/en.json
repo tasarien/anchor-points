@@ -242,7 +242,27 @@
   
   "writing_prompts": "Writing Prompt",
   "writing_screen_initial_page_title" : "Start page",
-  "summary_page_title" : "Submit"
+  "summary_page_title" : "Submit",
+
+  "record_screen_title": "Record Audio",
+  "audio_recording_request": "Audio Recording Request",
+  "request_details": "Request Details",
+  "requested_by": "Requested by",
+  "created_at": "Created at",
+  "unknown": "Unknown",
+  "message": "Message",
+  "how_to_record": "How to Record",
+  "swipe_through_segments": "Swipe left or right to navigate through segments",
+  "tap_record_button_instruction": "Tap the record button to start recording. Tap again to stop",
+  "recording_auto_stops": "Recording automatically stops after 35 seconds",
+  "review_and_rerecord": "Listen to your recording with the play button. Delete and re-record if needed",
+  "submit_all_recordings": "Complete all segments and submit when ready",
+  "get_started": "Get Started",
+  "delete": "Delete",
+  "play": "Play",
+  "next": "Next",
+  "submit_ap_audio": "Slide to Submit",
+  "success_in_saving_text": "Audio recordings saved successfully!"
   
 
 }

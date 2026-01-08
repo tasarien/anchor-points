@@ -170,7 +170,7 @@ class RequestModel {
         }
         SupabaseRequestSource().updateRequest(id, {
           'text_request': textRequest.toJson(),
-          'audio_request': textRequest.toJson(),
+          'audio_request': audioRequest.toJson(),
         });
         break;
     }

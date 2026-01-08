@@ -10,9 +10,11 @@ import 'package:anchor_point_app/data/models/request_model.dart';
 import 'package:anchor_point_app/data/sources/anchor_point_source.dart';
 import 'package:anchor_point_app/data/sources/request_source.dart';
 import 'package:anchor_point_app/presentations/providers/data_provider.dart';
+import 'package:anchor_point_app/presentations/screens/crafting_screen.dart';
 import 'package:anchor_point_app/presentations/widgets/global/loading_indicator.dart';
 import 'package:anchor_point_app/presentations/widgets/global/page_indicator.dart';
 import 'package:anchor_point_app/presentations/widgets/global/record_button.dart';
+import 'package:anchor_point_app/presentations/widgets/global/section_tab.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_button.dart';
 import 'package:anchor_point_app/presentations/widgets/global/whole_symbol.dart';
 import 'package:audio_waveforms/audio_waveforms.dart' as waveforms;
@@ -310,6 +312,10 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
     }
   }
 
+  bool _isAllSegmentsReady() {
+    return _segmentsLocal.every((segment) => segment.audioPath != null);
+  }
+
   // ---------- UI ----------
 
   @override
@@ -376,7 +382,7 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
                 }
               },
               itemBuilder: (_, i) {
-                if (i == 0) return const SizedBox();
+                if (i == 0) return _buildRequestPage();
                 if (i == _segmentsLocal.length + 1) {
                   return _buildSubmitPage();
                 }
@@ -386,7 +392,206 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _isSegmentPage ? _buildControls() : null,
+    );
+  }
+
+  Widget _buildRequestPage() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final getText = AppLocalizations.of(context).translate;
+    final request = anchorPoint.request;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header icon
+          Center(
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colorScheme.primaryContainer,
+              ),
+              child: Icon(
+                FontAwesomeIcons.microphone,
+                size: 36,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Title
+          Text(
+            getText("audio_recording_request"),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 32),
+
+          // Request information card
+          if (request != null) ...[
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      getText("request_details"),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoRow(
+                      FontAwesomeIcons.user,
+                      getText("requested_by"),
+                      request.audioRequest.companionType == CompanionType.you
+                          ? getText('yourself')
+                          : request.audioRequest.companionUsername ??
+                                getText("unknown"),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      FontAwesomeIcons.calendar,
+                      getText("created_at"),
+                      DateFormat(
+                        'MMM dd, yyyy',
+                      ).format(request.audioRequest.createdAt),
+                    ),
+                    if (request.audioRequest.message != null &&
+                        request.audioRequest.message!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      Text(
+                        getText("message"),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        request.audioRequest.message!,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+          // Get started button
+          SizedBox(
+            width: double.infinity,
+            child: WholeButton(
+              onPressed: () {
+                _pageController.nextPage(
+                  duration: Durations.medium1,
+                  curve: Curves.easeIn,
+                );
+              },
+              icon: FontAwesomeIcons.arrowRight,
+              text: getText("get_started"),
+              wide: true,
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          // Instructions
+          SectionTab(
+            text: getText('record_request_info'),
+            content: Column(
+              children: [
+                Text(
+                  getText("how_to_record"),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                _buildInstructionItem("1", getText("swipe_through_segments")),
+                _buildInstructionItem(
+                  "2",
+                  getText("tap_record_button_instruction"),
+                ),
+                _buildInstructionItem("3", getText("recording_auto_stops")),
+                _buildInstructionItem("4", getText("review_and_rerecord")),
+                _buildInstructionItem("5", getText("submit_all_recordings")),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey.shade600),
+        const SizedBox(width: 8),
+        Text(
+          "$label: ",
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInstructionItem(String number, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Theme.of(context).colorScheme.primaryContainer,
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(text),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -455,14 +660,13 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
               playerController: seg.playerController!,
               size: const Size(double.infinity, 80),
             ),
+          _buildControls(seg),
         ],
       ),
     );
   }
 
-  Widget _buildControls() {
-    final seg = _segmentsLocal[_segmentIndex];
-
+  Widget _buildControls(SegmentDataLocal seg) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 16),
       child: Column(
@@ -501,8 +705,8 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
                 suggested: seg.audioPath != null,
                 onPressed: () {
                   _pageController.nextPage(
-                    duration: Durations.medium1,
-                    curve: Curves.easeIn,
+                    duration: Durations.long4,
+                    curve: Curves.ease,
                   );
                 },
                 text: seg.audioPath != null ? "next" : null,
@@ -651,48 +855,58 @@ class _AudioRecorderScreenState extends State<AudioRecorderScreen> {
                   failureIcon: FaIcon(FontAwesomeIcons.xmark),
                   action: (controller) async {
                     controller.loading();
-                    List<String> allUrls = [];
-                    for (int i = 0; i < _segmentsLocal.length; i++) {
-                      final segment = _segmentsLocal[i];
-                      try {
-                        String segmentUrl = await SupabaseAnchorPointSource()
-                            .uploadAudioFile(
-                              segment.audioPath!,
-                              anchorPoint.id.toString(),
-                              '${i}_${segment.original.segmentData.name}',
-                            );
-                        if (mounted) {
-                          setState(() {
-                            _segmentsLocal[i].uploaded = true;
-                          });
+                    await Future.delayed(Durations.extralong4);
+                    if (_isAllSegmentsReady()) {
+                      List<String> allUrls = [];
+                      for (int i = 0; i < _segmentsLocal.length; i++) {
+                        final segment = _segmentsLocal[i];
+                        try {
+                          String segmentUrl = await SupabaseAnchorPointSource()
+                              .uploadAudioFile(
+                                segment.audioPath!,
+                                anchorPoint.id.toString(),
+                                '${i}_${segment.original.segmentData.name}',
+                              );
+                          if (mounted) {
+                            setState(() {
+                              _segmentsLocal[i].uploaded = true;
+                            });
+                          }
+                          allUrls.add(segmentUrl);
+                        } catch (e) {
+                          debugPrint(e.toString());
                         }
-                        allUrls.add(segmentUrl);
-                      } catch (e) {
-                        debugPrint(e.toString());
                       }
-                    }
 
-                    await anchorPoint.request!.changeStatus(
-                      RequestStatus.completed,
-                      RequestType.audio,
-                    );
-
-                    SupabaseAnchorPointSource().updateAnchorPoint(
-                      anchorPoint.id,
-                      {'segments_audio': allUrls, 'status': 'crafted'},
-                    );
-
-                    controller.success();
-
-                    await Future.delayed(Durations.extralong1);
-                    if (mounted) {
-                      appData.refreshAnchorPoint(anchorPoint.id);
-                      Navigator.pop(context);
-                      appData.changeTabVisibility(true);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("success_in_saving_text")),
+                      await anchorPoint.request!.changeStatus(
+                        RequestStatus.completed,
+                        RequestType.audio,
                       );
+
+                      SupabaseAnchorPointSource().updateAnchorPoint(
+                        anchorPoint.id,
+                        {'segments_audio': allUrls, 'status': 'crafted'},
+                      );
+
+                      controller.success();
+
+                      await Future.delayed(Durations.extralong1);
+                      if (mounted) {
+                        appData.refreshAnchorPoint(anchorPoint.id);
+                        Navigator.pop(context);
+                        appData.changeTabVisibility(true);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("success_in_saving_text")),
+                        );
+                      }
+                    } else {
+                      controller.failure();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("not_all_segments_recorded")),
+                      );
+                      await Future.delayed(Duration(seconds: 4));
+                      controller.reset();
                     }
                   },
                 ),
